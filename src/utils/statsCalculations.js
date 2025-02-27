@@ -1,4 +1,6 @@
 import _ from 'lodash';
+import { calculateHourlyPerformance } from './timeStatsUtils';
+import { calculateConvictionPerformance } from './convictionStatsUtils';
 
 /**
  * Calculate comprehensive statistics based on filtered trades
@@ -69,6 +71,12 @@ export const calculateStats = (filteredTrades) => {
       }
     });
 
+  // Calculate hourly performance
+  const hourlyPerformance = calculateHourlyPerformance(filteredTrades);
+  
+  // Calculate conviction performance
+  const convictionPerformance = calculateConvictionPerformance(filteredTrades);
+
   return {
     tradeCount: filteredTrades.length,
     winRate: (profitTrades.length / filteredTrades.length) * 100,
@@ -81,7 +89,9 @@ export const calculateStats = (filteredTrades) => {
     maxDrawdown: isNaN(maxDrawdown) ? 0 : maxDrawdown,
     totalPnL,
     assetPnL,
-    cumulativePnL
+    cumulativePnL,
+    hourlyPerformance,
+    convictionPerformance
   };
 };
 

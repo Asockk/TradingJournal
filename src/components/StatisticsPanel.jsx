@@ -3,6 +3,8 @@ import StatisticsCards from './stats/StatisticsCards';
 import EquityChart from './charts/EquityChart';
 import AssetPerformanceChart from './charts/AssetPerformanceChart';
 import AssetPerformanceTable from './stats/AssetPerformanceTable';
+import HourlyPerformanceHeatmap from './charts/HourlyPerformanceHeatmap';
+import ConvictionPerformanceChart from './charts/ConvictionPerformanceChart';
 import { calculateStats } from '../utils/statsCalculations';
 
 const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
@@ -32,6 +34,15 @@ const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
         
         {/* Asset Performance */}
         <AssetPerformanceChart data={stats.assetPnL.slice(0, 10)} />
+      </div>
+      
+      {/* New Statistics Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Hourly Performance Heatmap */}
+        <HourlyPerformanceHeatmap hourlyData={stats.hourlyPerformance} />
+        
+        {/* Conviction Performance Chart */}
+        <ConvictionPerformanceChart convictionData={stats.convictionPerformance} />
       </div>
       
       {/* Asset Performance Table */}
