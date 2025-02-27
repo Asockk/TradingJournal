@@ -1,70 +1,176 @@
-# Getting Started with Create React App
+# Trading Journal
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A modern, secure and minimalist web application for tracking and analyzing your trading activities. Built with React and TailwindCSS, this trading journal focuses on helping traders log, analyze, and improve their trading performance through detailed metrics and visualizations.
 
-## Available Scripts
+## Features
 
-In the project directory, you can run:
+### 📝 Comprehensive Trade Logging
+- Capture detailed entry and exit information
+- Track position sizes, leverage, and conviction levels
+- Document your rationale and post-trade notes
+- Support for various asset classes (Crypto, Stocks, Forex, Commodities)
 
-### `npm start`
+### 📊 Advanced Analytics
+- Win rate calculation and visualization
+- Risk/reward ratio analysis
+- Drawdown tracking
+- Asset-specific performance metrics
+- Equity curve visualization
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+### 🔍 Powerful Filtering
+- Filter trades by asset, type, date range, and more
+- Focus on winning or losing trades
+- Analyze performance by conviction level
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+### 💾 Data Management
+- Import and export data as CSV
+- All data stored locally for maximum privacy
+- No external servers or cloud storage
 
-### `npm test`
+### 📱 Responsive Design
+- Fully responsive layout that works on all devices
+- Modern, clean interface built with TailwindCSS
+- Optimized for both desktop and mobile use
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Technology Stack
 
-### `npm run build`
+- **Frontend**: React, TailwindCSS
+- **Data Visualization**: Recharts
+- **Data Processing**: PapaParse (CSV), Lodash
+- **Icons**: Lucide React
+- **Storage**: Local browser storage (no backend required)
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Project Structure
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+```
+src/
+├── components/
+│   ├── charts/
+│   │   ├── AssetPerformanceChart.jsx
+│   │   └── EquityChart.jsx
+│   ├── stats/
+│   │   ├── AssetPerformanceTable.jsx
+│   │   └── StatisticsCards.jsx
+│   ├── FilterPanel.jsx
+│   ├── Header.jsx
+│   ├── StatisticsPanel.jsx
+│   ├── TradeForm.jsx
+│   └── TradeTable.jsx
+├── utils/
+│   ├── calculations.js
+│   ├── constants.js
+│   ├── csvUtils.js
+│   ├── filterUtils.js
+│   ├── statsCalculations.js
+│   ├── storageUtils.js
+│   └── styleUtils.js
+├── App.js
+└── index.js
+```
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Getting Started
 
-### `npm run eject`
+### Prerequisites
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+- Node.js (v14 or later recommended)
+- npm or yarn
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### Installation
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/trading-journal.git
+   cd trading-journal
+   ```
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+2. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn install
+   ```
 
-## Learn More
+3. Start the development server:
+   ```bash
+   npm start
+   # or
+   yarn start
+   ```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+4. Open your browser and navigate to `http://localhost:3000`
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Building for Production
 
-### Code Splitting
+```bash
+npm run build
+# or
+yarn build
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+The build files will be created in the `build/` directory.
 
-### Analyzing the Bundle Size
+## Usage Guide
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+### Adding Your First Trade
 
-### Making a Progressive Web App
+1. Click the "New Trade" button
+2. Fill in the entry details section (required fields are marked)
+3. Add your initial risk/reward assessment and rationale
+4. If the trade is complete, fill in the exit details
+5. Click "Save" to add the trade to your journal
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Importing Existing Trades
 
-### Advanced Configuration
+1. Prepare a CSV file with your trade data
+   - The CSV should include columns that match the application's fields
+   - At minimum, include: asset, entryDate, entryPrice, position, and positionSize
+2. Click the import icon in the header
+3. Select your CSV file
+4. Verify your trades appear in the table
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+### Analyzing Your Performance
 
-### Deployment
+1. Navigate to the "Statistics" tab
+2. View your overall metrics in the KPI cards
+3. Analyze the equity curve to see your performance over time
+4. Check the asset performance chart to identify your strongest assets
+5. Use the details table to see per-asset statistics
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### Filtering Trades
 
-### `npm run build` fails to minify
+1. Click the "Filter" button
+2. Select your desired filter criteria
+3. The trade table will update to show only matching trades
+4. Statistics will also update to reflect only the filtered trades
+5. Click "Reset Filters" to return to viewing all trades
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## Security and Privacy
+
+This application stores all data locally in your browser's localStorage. No data is sent to any external servers or stored in the cloud. This design provides several benefits:
+
+- Complete privacy - your trading data never leaves your device
+- No internet connection required after initial loading
+- No account creation or login needed
+- Easy to backup data via the export function
+
+To back up your data, simply use the export function regularly and store the CSV files securely.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgements
+
+---
+
+**Disclaimer**: This application is intended for personal trade tracking and analysis only. It is not financial advice, and the developers are not responsible for any trading losses incurred while using this tool.
