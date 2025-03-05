@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 export const parseFuturesCSV = (file, existingTrades, onComplete, onError) => {
   Papa.parse(file, {
     header: true,
+    dynamicTyping: true,
     skipEmptyLines: true,
     complete: (results) => {
       try {
@@ -96,7 +97,8 @@ const processFuturesData = (futuresData, existingTrades, onComplete) => {
 };
 
 /**
- * Identify trade groups by tracking position changes
+ * Identify trade groups by tracking position changes - original implementation
+ * with minor improvements
  * @param {Array} entries - All entries for a specific contract, sorted by time
  * @returns {Array} - Array of trade groups with open and close entries
  */
@@ -131,7 +133,8 @@ const identifyTradeGroups = (entries) => {
           fundingEntries: [],
           positionSize: Math.abs(change),
           isLong: change > 0,
-          entries: [entry]
+          entries: [entry],
+          maxPositionSize: Math.abs(change)
         };
       } else if ((currentPosition > 0 && change < 0) || (currentPosition < 0 && change > 0)) {
         // Position is being reduced or closed
@@ -152,7 +155,8 @@ const identifyTradeGroups = (entries) => {
               fundingEntries: [],
               positionSize: Math.abs(currentPosition),
               isLong: currentPosition > 0,
-              entries: [entry]
+              entries: [entry],
+              maxPositionSize: Math.abs(currentPosition)
             };
           } else {
             currentGroup = {
@@ -161,7 +165,8 @@ const identifyTradeGroups = (entries) => {
               fundingEntries: [],
               positionSize: 0,
               isLong: false,
-              entries: []
+              entries: [],
+              maxPositionSize: 0
             };
           }
         }
@@ -171,6 +176,7 @@ const identifyTradeGroups = (entries) => {
         currentGroup.openEntries.push(entry);
         currentGroup.entries.push(entry);
         currentGroup.positionSize = Math.abs(currentPosition);
+        currentGroup.maxPositionSize = Math.max(currentGroup.maxPositionSize || 0, Math.abs(currentPosition));
       }
     } else if (entry.type.toLowerCase().includes('funding') && currentGroup.positionSize > 0) {
       // Funding rate change entry - add to current group if we have an open position
@@ -209,29 +215,40 @@ const createTradeFromGroup = (group) => {
     firstEntry['mark price']
   );
   
-  // Calculate total fees including trading fees and funding rates
-  let totalFees = 0;
+  // Calculate fees and PnL components
+  let totalTradingFees = 0;
+  let totalRealizedPnL = 0;
+  let totalPositiveFunding = 0;
+  let totalNegativeFunding = 0;
   
-  // Add fees from open entries
-  group.openEntries.forEach(entry => {
-    if (entry.fee) {
-      totalFees += parseFloat(entry.fee);
+  // Process all entries
+  group.entries.forEach(entry => {
+    // Add trading fees
+    if (entry.fee && !isNaN(parseFloat(entry.fee))) {
+      totalTradingFees += parseFloat(entry.fee);
+    }
+    
+    // Add realized PnL (if available)
+    if (entry['realized pnl'] && !isNaN(parseFloat(entry['realized pnl']))) {
+      totalRealizedPnL += parseFloat(entry['realized pnl']);
+    }
+    
+    // Process funding rates (positive = profit, negative = cost)
+    if (entry['realized funding'] && !isNaN(parseFloat(entry['realized funding']))) {
+      const fundingValue = parseFloat(entry['realized funding']);
+      if (fundingValue >= 0) {
+        totalPositiveFunding += fundingValue;
+      } else {
+        totalNegativeFunding += Math.abs(fundingValue);
+      }
     }
   });
   
-  // Add fees from close entries
-  group.closeEntries.forEach(entry => {
-    if (entry.fee) {
-      totalFees += parseFloat(entry.fee);
-    }
-  });
+  // Total funding impact
+  const totalFundingImpact = totalPositiveFunding - totalNegativeFunding;
   
-  // Add funding rate fees
-  group.fundingEntries.forEach(entry => {
-    if (entry['realized funding']) {
-      totalFees += parseFloat(entry['realized funding']);
-    }
-  });
+  // Total fees (only trading fees and negative funding)
+  const totalFees = totalTradingFees + totalNegativeFunding;
   
   // Initialize the trade object
   const trade = {
@@ -242,12 +259,19 @@ const createTradeFromGroup = (group) => {
     entryDate: formattedEntryDate,
     entryTime: formattedEntryTime,
     entryPrice: entryPrice,
-    positionSize: group.positionSize,
+    positionSize: group.maxPositionSize || group.positionSize, // Use max position size for better accuracy
     currency: determineCurrency(firstEntry.symbol || firstEntry.contract),
     fees: totalFees.toFixed(2),
-    leverage: 10, // Default for perpetual futures
+    leverage: determineLeverage(firstEntry), // More intelligently determine leverage
     conviction: 3, // Default middle conviction
   };
+  
+  // Add funding info to notes if present
+  if (group.fundingEntries.length > 0) {
+    trade.notes = `Includes ${group.fundingEntries.length} funding rate changes: ` +
+                 `${totalFundingImpact >= 0 ? '+' : ''}${totalFundingImpact.toFixed(4)} net impact ` +
+                 `(${totalPositiveFunding.toFixed(4)} earned, ${totalNegativeFunding.toFixed(4)} paid)`;
+  }
   
   // If we have closing entries, add exit information
   if (group.closeEntries.length > 0) {
@@ -261,20 +285,44 @@ const createTradeFromGroup = (group) => {
     trade.exitTime = formattedExitTime;
     trade.exitPrice = parseFloat(lastCloseEntry['trade price'] || lastCloseEntry['mark price']);
     
-    // Calculate or get PnL
-    let realizedPnL = 0;
+    // Calculate final PnL (realized PnL + positive funding - trading fees - negative funding)
+    const finalPnL = totalRealizedPnL + totalPositiveFunding - totalTradingFees - totalNegativeFunding;
+    trade.pnl = finalPnL.toFixed(2);
     
-    // Sum up realized PnL from all closing entries
-    group.closeEntries.forEach(entry => {
-      if (entry['realized pnl']) {
-        realizedPnL += parseFloat(entry['realized pnl']);
-      }
-    });
-    
-    trade.pnl = realizedPnL.toFixed(2);
+    // If we don't have realized PnL data but have prices, calculate as fallback
+    if (totalRealizedPnL === 0 && trade.entryPrice && trade.exitPrice) {
+      const calculatedPnL = calculatePnL(
+        trade.entryPrice, 
+        trade.exitPrice, 
+        trade.positionSize, 
+        positionType,
+        determineLeverage(firstEntry),
+        totalFees
+      );
+      
+      // Only use calculated PnL if we didn't have any realized PnL entries
+      trade.pnl = calculatedPnL.toFixed(2);
+    }
   }
   
   return trade;
+};
+
+/**
+ * Calculate PnL as a fallback when not provided in the data
+ * @param {number} entryPrice - Entry price
+ * @param {number} exitPrice - Exit price
+ * @param {number} positionSize - Position size
+ * @param {string} positionType - "Long" or "Short"
+ * @param {number} leverage - Leverage factor
+ * @param {number} fees - Total fees
+ * @returns {number} - Calculated PnL
+ */
+const calculatePnL = (entryPrice, exitPrice, positionSize, positionType, leverage, fees) => {
+  if (!entryPrice || !exitPrice || !positionSize) return 0;
+  
+  const direction = positionType === 'Long' ? 1 : -1;
+  return ((exitPrice - entryPrice) / entryPrice * positionSize * direction * leverage) - fees;
 };
 
 /**
@@ -324,16 +372,50 @@ const determineCurrency = (symbolOrContract) => {
 };
 
 /**
+ * Intelligently determine leverage based on entry data
+ * @param {Object} entry - Trade entry
+ * @returns {number} - Leverage value
+ */
+const determineLeverage = (entry) => {
+  // If we have explicit leverage info, use it
+  if (entry.leverage && !isNaN(parseFloat(entry.leverage))) {
+    return parseFloat(entry.leverage);
+  }
+  
+  // For futures, default to 10x unless we have evidence otherwise
+  if (entry.type && entry.type.toLowerCase().includes('futures')) {
+    return 10;
+  }
+  
+  // Default to 1x
+  return 1;
+};
+
+/**
  * Check if a trade already exists in the journal
+ * Improved to better handle duplicates
  * @param {Object} newTrade - New trade to check
  * @param {Array} existingTrades - Existing trades in the journal
  * @returns {Object|null} - The existing trade if found, null otherwise
  */
 const checkForDuplicate = (newTrade, existingTrades) => {
   return existingTrades.find(existingTrade => 
+    // Asset must match
     existingTrade.asset === newTrade.asset &&
-    Math.abs(new Date(existingTrade.entryDate) - new Date(newTrade.entryDate)) < 86400000 && // Within 24 hours
-    (newTrade.exitDate ? Math.abs(new Date(existingTrade.exitDate || '') - new Date(newTrade.exitDate)) < 86400000 : true) &&
-    Math.abs(parseFloat(existingTrade.positionSize || 0) - parseFloat(newTrade.positionSize || 0)) < (0.1 * parseFloat(newTrade.positionSize || 1)) // Within 10%
+    
+    // Entry date should be within 24 hours
+    Math.abs(new Date(existingTrade.entryDate) - new Date(newTrade.entryDate)) < 86400000 && 
+    
+    // If exit date exists on new trade, it should match within 24 hours if it exists on existing trade
+    (newTrade.exitDate ? 
+      (!existingTrade.exitDate || Math.abs(new Date(existingTrade.exitDate) - new Date(newTrade.exitDate)) < 86400000) 
+      : true) &&
+    
+    // Position size should be within 10% tolerance
+    Math.abs(parseFloat(existingTrade.positionSize || 0) - parseFloat(newTrade.positionSize || 0)) < 
+      (0.1 * parseFloat(newTrade.positionSize || 1)) &&
+    
+    // Position type should match
+    existingTrade.position === newTrade.position
   );
 };

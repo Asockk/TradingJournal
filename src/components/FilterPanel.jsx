@@ -1,4 +1,5 @@
 import React from 'react';
+import { tradeTypes, marketConditions } from '../utils/constants';
 
 const FilterPanel = ({ filters, onFilterChange }) => {
   const handleFilterChange = (e) => {
@@ -57,6 +58,59 @@ const FilterPanel = ({ filters, onFilterChange }) => {
             <option value="Aktien">Aktien</option>
             <option value="Forex">Forex</option>
             <option value="Rohstoffe">Rohstoffe</option>
+          </select>
+        </div>
+        
+        {/* Alpha Trader Filter: Trade Type */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Trade-Typ
+          </label>
+          <select
+            name="tradeType"
+            value={filters.tradeType}
+            onChange={handleFilterChange}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          >
+            <option value="">Alle</option>
+            {tradeTypes.map((type) => (
+              <option key={type} value={type}>{type}</option>
+            ))}
+          </select>
+        </div>
+        
+        {/* Alpha Trader Filter: Market Condition */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Marktbedingung
+          </label>
+          <select
+            name="marketCondition"
+            value={filters.marketCondition}
+            onChange={handleFilterChange}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          >
+            <option value="">Alle</option>
+            {marketConditions.map((condition) => (
+              <option key={condition} value={condition}>{condition}</option>
+            ))}
+          </select>
+        </div>
+        
+        {/* Alpha Trader Filter: Followed Plan */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Plan befolgt
+          </label>
+          <select
+            name="followedPlan"
+            value={filters.followedPlan}
+            onChange={handleFilterChange}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          >
+            <option value="">Alle</option>
+            <option value="true">Ja</option>
+            <option value="false">Nein</option>
           </select>
         </div>
         

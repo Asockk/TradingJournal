@@ -26,7 +26,19 @@ export const initialTradeState = {
   actualRiskReward: '',
   rationale: '',
   reassessmentTriggers: '',
-  notes: ''
+  notes: '',
+  
+  // Alpha Trader Ergänzungen
+  tradePlan: '',
+  exitCriteria: '',
+  preTradeEmotion: 3,
+  postTradeEmotion: 3,
+  followedPlan: true,
+  marketCondition: 'Neutral',
+  tradeType: 'Other',
+  whatWorked: '',
+  whatDidntWork: '',
+  wouldTakeAgain: true
 };
 
 /**
@@ -41,7 +53,11 @@ export const initialFilterState = {
   minConviction: 1,
   maxConviction: 5,
   profitOnly: false,
-  lossOnly: false
+  lossOnly: false,
+  // Alpha Trader Filter-Erweiterungen
+  tradeType: '',
+  marketCondition: '',
+  followedPlan: ''
 };
 
 /**
@@ -62,3 +78,36 @@ export const currencies = [
   { label: 'USD', symbol: '$' },
   { label: 'GBP', symbol: '£' }
 ];
+
+/**
+ * Alpha Trader - Trade Typen
+ */
+export const tradeTypes = [
+  'Trend-Following',
+  'Mean-Reversion',
+  'Breakout',
+  'News',
+  'Technical',
+  'Fundamental',
+  'Other'
+];
+
+/**
+ * Alpha Trader - Marktbedingungen
+ */
+export const marketConditions = [
+  'Bullish',
+  'Bearish',
+  'Ranging',
+  'High-Volatility',
+  'Low-Volatility',
+  'Neutral'
+];
+
+/**
+ * Alpha Trader - Emotionszustände
+ */
+export const emotionStates = {
+  pre: ['Ängstlich', 'Unsicher', 'Neutral', 'Sicher', 'Übermütig'],
+  post: ['Frustriert', 'Unzufrieden', 'Neutral', 'Zufrieden', 'Euphorisch']
+};

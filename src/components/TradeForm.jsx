@@ -4,12 +4,28 @@ import { calculateDuration, calculateExpectedPnL, calculateEntryRiskReward,
          calculatePnL, calculateActualRiskReward } from '../utils/calculations';
 
 const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
-  const [currentTrade, setCurrentTrade] = useState(trade);
+  const [currentTrade, setCurrentTrade] = useState({
+    ...trade,
+    // Default-Werte für neue Alpha Trader Felder
+    tradePlan: trade.tradePlan || '',
+    exitCriteria: trade.exitCriteria || '',
+    preTradeEmotion: trade.preTradeEmotion || 3,
+    postTradeEmotion: trade.postTradeEmotion || 3,
+    followedPlan: trade.followedPlan !== undefined ? trade.followedPlan : true,
+    marketCondition: trade.marketCondition || 'Neutral',
+    tradeType: trade.tradeType || 'Other',
+    whatWorked: trade.whatWorked || '',
+    whatDidntWork: trade.whatDidntWork || '',
+    wouldTakeAgain: trade.wouldTakeAgain !== undefined ? trade.wouldTakeAgain : true
+  });
 
   // Form input change handler
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setCurrentTrade(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setCurrentTrade(prev => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value 
+    }));
   };
 
   // Calculated fields
@@ -105,12 +121,12 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
         </div>
         
         <form onSubmit={handleSubmit} className="p-4">
+          {/* Entry Details */}
+          <div className="md:col-span-2 lg:col-span-3 border-b pb-2 mb-2">
+            <h3 className="font-medium mb-2">Entry-Details</h3>
+          </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {/* Entry Details */}
-            <div className="md:col-span-2 lg:col-span-3 border-b pb-2 mb-2">
-              <h3 className="font-medium mb-2">Entry-Details</h3>
-            </div>
-            
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Entry-Datum
@@ -184,6 +200,72 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
                 <option value="Forex">Forex</option>
                 <option value="Rohstoffe">Rohstoffe</option>
               </select>
+            </div>
+            
+            {/* 5. Trade-Kategorisierung (Alpha Trader) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Trade-Typ
+              </label>
+              <select
+                name="tradeType"
+                value={currentTrade.tradeType}
+                onChange={handleInputChange}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              >
+                <option value="Trend-Following">Trend-Following</option>
+                <option value="Mean-Reversion">Mean-Reversion</option>
+                <option value="Breakout">Breakout</option>
+                <option value="News">News-basiert</option>
+                <option value="Technical">Technische Analyse</option>
+                <option value="Fundamental">Fundamental</option>
+                <option value="Other">Sonstige</option>
+              </select>
+            </div>
+            
+            {/* 4. Marktbedingungen (Alpha Trader) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Marktbedingungen
+              </label>
+              <select
+                name="marketCondition"
+                value={currentTrade.marketCondition}
+                onChange={handleInputChange}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              >
+                <option value="Bullish">Bullish</option>
+                <option value="Bearish">Bearish</option>
+                <option value="Ranging">Seitwärts</option>
+                <option value="High-Volatility">Hoch Volatil</option>
+                <option value="Low-Volatility">Niedrig Volatil</option>
+                <option value="Neutral">Neutral</option>
+              </select>
+            </div>
+            
+            {/* 2. Emotionaler Zustand vor dem Trade (Alpha Trader) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Emotionaler Zustand (vor Trade)
+              </label>
+              <div className="flex flex-col">
+                <input
+                  type="range"
+                  name="preTradeEmotion"
+                  min="1"
+                  max="5"
+                  value={currentTrade.preTradeEmotion}
+                  onChange={handleInputChange}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Ängstlich</span>
+                  <span>Unsicher</span>
+                  <span>Neutral</span>
+                  <span>Sicher</span>
+                  <span>Übermütig</span>
+                </div>
+              </div>
             </div>
             
             <div>
@@ -324,25 +406,59 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
                 className="w-full p-2 border border-gray-300 rounded-md bg-gray-50"
               />
             </div>
-            
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Begründung (Rationale)
-              </label>
-              <textarea
-                name="rationale"
-                value={currentTrade.rationale}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md"
-                rows="2"
-              ></textarea>
+          </div>
+
+          {/* 1. Pre-Trade-Planung (Alpha Trader) */}
+          <div className="mt-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Trade-Plan (vor Einstieg)
+                </label>
+                <textarea
+                  name="tradePlan"
+                  value={currentTrade.tradePlan}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  rows="3"
+                  placeholder="Detaillierter Plan für diesen Trade inkl. Setup, Risikomanagement..."
+                ></textarea>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Ausstiegskriterien
+                </label>
+                <textarea
+                  name="exitCriteria"
+                  value={currentTrade.exitCriteria}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  rows="3"
+                  placeholder="Konkrete Bedingungen, unter denen der Trade beendet wird..."
+                ></textarea>
+              </div>
             </div>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1 mt-4">
+              Begründung (Rationale)
+            </label>
+            <textarea
+              name="rationale"
+              value={currentTrade.rationale}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md"
+              rows="2"
+            ></textarea>
+          </div>
             
-            {/* Exit Details */}
-            <div className="md:col-span-2 lg:col-span-3 border-b pb-2 mb-2 mt-4">
-              <h3 className="font-medium mb-2">Exit-Details</h3>
-            </div>
-            
+          {/* Exit Details */}
+          <div className="md:col-span-2 lg:col-span-3 border-b pb-2 mb-2 mt-4">
+            <h3 className="font-medium mb-2">Exit-Details</h3>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Exit-Datum
@@ -444,31 +560,146 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
               />
             </div>
             
-            <div className="md:col-span-2">
+            {/* 2. Emotionaler Zustand nach dem Trade (Alpha Trader) */}
+            <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Reassessment-Triggers
+                Emotionaler Zustand (nach Trade)
               </label>
-              <textarea
-                name="reassessmentTriggers"
-                value={currentTrade.reassessmentTriggers}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md"
-                rows="2"
-              ></textarea>
+              <div className="flex flex-col">
+                <input
+                  type="range"
+                  name="postTradeEmotion"
+                  min="1"
+                  max="5"
+                  value={currentTrade.postTradeEmotion}
+                  onChange={handleInputChange}
+                  className="w-full"
+                />
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Frustriert</span>
+                  <span>Unzufrieden</span>
+                  <span>Neutral</span>
+                  <span>Zufrieden</span>
+                  <span>Euphorisch</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* 3. Post-Trade Review (Alpha Trader) */}
+          <div className="mt-4 border-t pt-4">
+            <h3 className="font-medium mb-2">Post-Trade Review</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+              <div className="flex items-center">
+                <label className="text-sm font-medium text-gray-700 mr-2">
+                  Habe ich den Plan befolgt?
+                </label>
+                <div className="flex items-center space-x-4">
+                  <label className="inline-flex items-center">
+                    <input
+                      type="radio"
+                      name="followedPlan"
+                      checked={currentTrade.followedPlan === true}
+                      onChange={() => setCurrentTrade(prev => ({ ...prev, followedPlan: true }))}
+                      className="mr-1"
+                    />
+                    <span>Ja</span>
+                  </label>
+                  <label className="inline-flex items-center">
+                    <input
+                      type="radio"
+                      name="followedPlan"
+                      checked={currentTrade.followedPlan === false}
+                      onChange={() => setCurrentTrade(prev => ({ ...prev, followedPlan: false }))}
+                      className="mr-1"
+                    />
+                    <span>Nein</span>
+                  </label>
+                </div>
+              </div>
+              
+              <div className="flex items-center">
+                <label className="text-sm font-medium text-gray-700 mr-2">
+                  Würde ich diesen Trade wieder machen?
+                </label>
+                <div className="flex items-center space-x-4">
+                  <label className="inline-flex items-center">
+                    <input
+                      type="radio"
+                      name="wouldTakeAgain"
+                      checked={currentTrade.wouldTakeAgain === true}
+                      onChange={() => setCurrentTrade(prev => ({ ...prev, wouldTakeAgain: true }))}
+                      className="mr-1"
+                    />
+                    <span>Ja</span>
+                  </label>
+                  <label className="inline-flex items-center">
+                    <input
+                      type="radio"
+                      name="wouldTakeAgain"
+                      checked={currentTrade.wouldTakeAgain === false}
+                      onChange={() => setCurrentTrade(prev => ({ ...prev, wouldTakeAgain: false }))}
+                      className="mr-1"
+                    />
+                    <span>Nein</span>
+                  </label>
+                </div>
+              </div>
             </div>
             
-            <div className="md:col-span-2 lg:col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Notizen nach Trade-Abschluss
-              </label>
-              <textarea
-                name="notes"
-                value={currentTrade.notes}
-                onChange={handleInputChange}
-                className="w-full p-2 border border-gray-300 rounded-md"
-                rows="3"
-              ></textarea>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Was hat funktioniert?
+                </label>
+                <textarea
+                  name="whatWorked"
+                  value={currentTrade.whatWorked}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  rows="2"
+                ></textarea>
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Was hat nicht funktioniert?
+                </label>
+                <textarea
+                  name="whatDidntWork"
+                  value={currentTrade.whatDidntWork}
+                  onChange={handleInputChange}
+                  className="w-full p-2 border border-gray-300 rounded-md"
+                  rows="2"
+                ></textarea>
+              </div>
             </div>
+          </div>
+          
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium text-gray-700 mb-1 mt-4">
+              Reassessment-Triggers
+            </label>
+            <textarea
+              name="reassessmentTriggers"
+              value={currentTrade.reassessmentTriggers}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md"
+              rows="2"
+            ></textarea>
+          </div>
+          
+          <div className="md:col-span-2 lg:col-span-3">
+            <label className="block text-sm font-medium text-gray-700 mb-1 mt-4">
+              Notizen nach Trade-Abschluss
+            </label>
+            <textarea
+              name="notes"
+              value={currentTrade.notes}
+              onChange={handleInputChange}
+              className="w-full p-2 border border-gray-300 rounded-md"
+              rows="3"
+            ></textarea>
           </div>
           
           <div className="mt-4 flex justify-end gap-2">

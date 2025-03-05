@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Edit, Trash2, ChevronDown, ChevronUp, BarChart2, DollarSign, TrendingUp, ArrowUpDown } from 'lucide-react';
+import { Edit, Trash2, ChevronDown, ChevronUp, BarChart2, DollarSign, TrendingUp, ArrowUpDown, BookOpen, Thermometer } from 'lucide-react';
 import { getPnLColorClass, getPositionBgClass } from '../utils/styleUtils';
 
 const TradeTable = ({ trades, onEdit, onDelete, allTrades }) => {
@@ -123,6 +123,15 @@ const TradeTable = ({ trades, onEdit, onDelete, allTrades }) => {
               R:R <SortIndicator field="actualRiskReward" />
             </div>
           </th>
+          {/* Alpha Trader: Neue Spalte für Plan-Befolgung */}
+          <th 
+            className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+            onClick={() => handleSort('followedPlan')}
+          >
+            <div className="flex items-center justify-center">
+              Plan <SortIndicator field="followedPlan" />
+            </div>
+          </th>
           <th className="px-4 py-3"></th>
         </tr>
       </thead>
@@ -145,7 +154,8 @@ const TradeTable = ({ trades, onEdit, onDelete, allTrades }) => {
                 {trade.leverage > 1 ? `${trade.leverage}x` : 'Spot'}
               </div>
               <div className="text-xs text-gray-500">
-                Conv: {trade.conviction}/5
+                {/* Alpha Trader: Trade-Typ anzeigen */}
+                {trade.tradeType || 'Other'}
               </div>
             </td>
             <td className="px-4 py-4 whitespace-nowrap">
@@ -170,6 +180,16 @@ const TradeTable = ({ trades, onEdit, onDelete, allTrades }) => {
               <div className="text-sm text-gray-900">
                 {trade.actualRiskReward || '-'}
               </div>
+            </td>
+            {/* Alpha Trader: Plan-Befolgung visualisieren */}
+            <td className="px-4 py-4 whitespace-nowrap text-center">
+              {trade.followedPlan !== undefined && (
+                <div className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  trade.followedPlan ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                }`}>
+                  {trade.followedPlan ? 'Ja' : 'Nein'}
+                </div>
+              )}
             </td>
             <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
               <div className="flex space-x-2 justify-end">
@@ -216,6 +236,9 @@ const TradeTable = ({ trades, onEdit, onDelete, allTrades }) => {
             <option value="pnl">PnL</option>
             <option value="positionSize">Größe</option>
             <option value="actualRiskReward">Risk/Reward</option>
+            {/* Alpha Trader: Sortieren nach Trade-Typ und Plan-Befolgung */}
+            <option value="tradeType">Trade-Typ</option>
+            <option value="followedPlan">Plan befolgt</option>
           </select>
           <button 
             className="px-2 py-1 border border-l-0 border-gray-300 rounded-r-md bg-white text-gray-700"
@@ -239,6 +262,12 @@ const TradeTable = ({ trades, onEdit, onDelete, allTrades }) => {
               <div className={`px-2 py-0.5 rounded-full text-xs font-medium ${getPositionBgClass(trade.position)}`}>
                 {trade.position}
               </div>
+              {/* Alpha Trader: Trade-Typ Badge */}
+              {trade.tradeType && (
+                <div className="px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                  {trade.tradeType}
+                </div>
+              )}
             </div>
             <div className="flex items-center">
               <div className={`mr-2 font-medium ${getPnLColorClass(trade.pnl)}`}>
@@ -300,7 +329,46 @@ const TradeTable = ({ trades, onEdit, onDelete, allTrades }) => {
                   <p className="text-xs text-gray-500">Conviction</p>
                   <p>{trade.conviction}/5</p>
                 </div>
+                {/* Alpha Trader: Zusätzliche Felder */}
+                <div>
+                  <p className="text-xs text-gray-500 flex items-center">
+                    <BookOpen size={12} className="mr-1" />Plan befolgt
+                  </p>
+                  <p className={`font-medium ${trade.followedPlan ? 'text-green-600' : 'text-yellow-600'}`}>
+                    {trade.followedPlan ? 'Ja' : 'Nein'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray-500 flex items-center">
+                    <Thermometer size={12} className="mr-1" />Marktbedingung
+                  </p>
+                  <p>{trade.marketCondition || 'Neutral'}</p>
+                </div>
               </div>
+              
+              {/* Alpha Trader: Plan und Reflexion */}
+              {(trade.tradePlan || trade.whatWorked || trade.whatDidntWork) && (
+                <div className="mt-2 pt-2 border-t border-gray-200">
+                  {trade.tradePlan && (
+                    <div className="mb-1">
+                      <p className="text-xs text-gray-500">Trade-Plan</p>
+                      <p className="text-sm">{trade.tradePlan}</p>
+                    </div>
+                  )}
+                  {trade.whatWorked && (
+                    <div className="mt-1">
+                      <p className="text-xs text-gray-500">Was hat funktioniert</p>
+                      <p className="text-sm">{trade.whatWorked}</p>
+                    </div>
+                  )}
+                  {trade.whatDidntWork && (
+                    <div className="mt-1">
+                      <p className="text-xs text-gray-500">Was hat nicht funktioniert</p>
+                      <p className="text-sm">{trade.whatDidntWork}</p>
+                    </div>
+                  )}
+                </div>
+              )}
               
               {/* Rationale/Notes (if present) */}
               {(trade.rationale || trade.notes) && (

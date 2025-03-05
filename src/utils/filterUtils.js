@@ -34,9 +34,23 @@ export const filterTrades = (trades, filters) => {
       (trade.pnl && parseFloat(trade.pnl) > 0);
     const lossMatch = !filters.lossOnly || 
       (trade.pnl && parseFloat(trade.pnl) < 0);
+      
+    // Alpha Trader: Trade-Typ Filter
+    const tradeTypeMatch = !filters.tradeType || 
+      trade.tradeType === filters.tradeType;
+      
+    // Alpha Trader: Marktbedingung Filter
+    const marketConditionMatch = !filters.marketCondition || 
+      trade.marketCondition === filters.marketCondition;
+      
+    // Alpha Trader: Plan befolgt Filter
+    const followedPlanMatch = !filters.followedPlan || 
+      (filters.followedPlan === 'true' ? trade.followedPlan === true : 
+       filters.followedPlan === 'false' ? trade.followedPlan === false : true);
     
     return assetMatch && positionMatch && assetClassMatch && 
            dateFromMatch && dateToMatch && convictionMatch &&
-           profitMatch && lossMatch;
+           profitMatch && lossMatch && tradeTypeMatch && 
+           marketConditionMatch && followedPlanMatch;
   });
 };
