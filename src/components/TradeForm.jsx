@@ -244,27 +244,51 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             </div>
             
             {/* 2. Emotionaler Zustand vor dem Trade (Alpha Trader) */}
-            <div>
+            <div className="lg:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Emotionaler Zustand (vor Trade)
               </label>
-              <div className="flex flex-col">
-                <input
-                  type="range"
-                  name="preTradeEmotion"
-                  min="1"
-                  max="5"
-                  value={currentTrade.preTradeEmotion}
-                  onChange={handleInputChange}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-gray-500">
+              <div className="flex flex-wrap gap-2">
+                <button 
+                  type="button"
+                  className={`flex items-center space-x-1 px-3 py-1.5 rounded text-xs cursor-pointer transition-colors ${currentTrade.preTradeEmotion == 1 ? 'bg-red-100 text-red-800 font-medium' : 'bg-gray-50 text-gray-700 hover:bg-red-50'}`}
+                  onClick={() => setCurrentTrade(prev => ({ ...prev, preTradeEmotion: 1 }))}
+                >
+                  <span className="text-base">😰</span>
                   <span>Ängstlich</span>
+                </button>
+                <button 
+                  type="button"
+                  className={`flex items-center space-x-1 px-3 py-1.5 rounded text-xs cursor-pointer transition-colors ${currentTrade.preTradeEmotion == 2 ? 'bg-orange-100 text-orange-800 font-medium' : 'bg-gray-50 text-gray-700 hover:bg-orange-50'}`}
+                  onClick={() => setCurrentTrade(prev => ({ ...prev, preTradeEmotion: 2 }))}
+                >
+                  <span className="text-base">😟</span>
                   <span>Unsicher</span>
+                </button>
+                <button 
+                  type="button"
+                  className={`flex items-center space-x-1 px-3 py-1.5 rounded text-xs cursor-pointer transition-colors ${currentTrade.preTradeEmotion == 3 ? 'bg-yellow-100 text-yellow-800 font-medium' : 'bg-gray-50 text-gray-700 hover:bg-yellow-50'}`}
+                  onClick={() => setCurrentTrade(prev => ({ ...prev, preTradeEmotion: 3 }))}
+                >
+                  <span className="text-base">😐</span>
                   <span>Neutral</span>
+                </button>
+                <button 
+                  type="button"
+                  className={`flex items-center space-x-1 px-3 py-1.5 rounded text-xs cursor-pointer transition-colors ${currentTrade.preTradeEmotion == 4 ? 'bg-blue-100 text-blue-800 font-medium' : 'bg-gray-50 text-gray-700 hover:bg-blue-50'}`}
+                  onClick={() => setCurrentTrade(prev => ({ ...prev, preTradeEmotion: 4 }))}
+                >
+                  <span className="text-base">🙂</span>
                   <span>Sicher</span>
+                </button>
+                <button 
+                  type="button"
+                  className={`flex items-center space-x-1 px-3 py-1.5 rounded text-xs cursor-pointer transition-colors ${currentTrade.preTradeEmotion == 5 ? 'bg-green-100 text-green-800 font-medium' : 'bg-gray-50 text-gray-700 hover:bg-green-50'}`}
+                  onClick={() => setCurrentTrade(prev => ({ ...prev, preTradeEmotion: 5 }))}
+                >
+                  <span className="text-base">😄</span>
                   <span>Übermütig</span>
-                </div>
+                </button>
               </div>
             </div>
             
@@ -548,27 +572,51 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             </div>
             
             {/* 2. Emotionaler Zustand nach dem Trade (Alpha Trader) */}
-            <div>
+            <div className="lg:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Emotionaler Zustand (nach Trade)
               </label>
-              <div className="flex flex-col">
-                <input
-                  type="range"
-                  name="postTradeEmotion"
-                  min="1"
-                  max="5"
-                  value={currentTrade.postTradeEmotion}
-                  onChange={handleInputChange}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-xs text-gray-500">
+              <div className="flex flex-wrap gap-2">
+                <button 
+                  type="button"
+                  className={`flex items-center space-x-1 px-3 py-1.5 rounded text-xs cursor-pointer transition-colors ${currentTrade.postTradeEmotion == 1 ? 'bg-red-100 text-red-800 font-medium' : 'bg-gray-50 text-gray-700 hover:bg-red-50'}`}
+                  onClick={() => setCurrentTrade(prev => ({ ...prev, postTradeEmotion: 1 }))}
+                >
+                  <span className="text-base">😠</span>
                   <span>Frustriert</span>
+                </button>
+                <button 
+                  type="button"
+                  className={`flex items-center space-x-1 px-3 py-1.5 rounded text-xs cursor-pointer transition-colors ${currentTrade.postTradeEmotion == 2 ? 'bg-orange-100 text-orange-800 font-medium' : 'bg-gray-50 text-gray-700 hover:bg-orange-50'}`}
+                  onClick={() => setCurrentTrade(prev => ({ ...prev, postTradeEmotion: 2 }))}
+                >
+                  <span className="text-base">😕</span>
                   <span>Unzufrieden</span>
+                </button>
+                <button 
+                  type="button"
+                  className={`flex items-center space-x-1 px-3 py-1.5 rounded text-xs cursor-pointer transition-colors ${currentTrade.postTradeEmotion == 3 ? 'bg-yellow-100 text-yellow-800 font-medium' : 'bg-gray-50 text-gray-700 hover:bg-yellow-50'}`}
+                  onClick={() => setCurrentTrade(prev => ({ ...prev, postTradeEmotion: 3 }))}
+                >
+                  <span className="text-base">😐</span>
                   <span>Neutral</span>
+                </button>
+                <button 
+                  type="button"
+                  className={`flex items-center space-x-1 px-3 py-1.5 rounded text-xs cursor-pointer transition-colors ${currentTrade.postTradeEmotion == 4 ? 'bg-blue-100 text-blue-800 font-medium' : 'bg-gray-50 text-gray-700 hover:bg-blue-50'}`}
+                  onClick={() => setCurrentTrade(prev => ({ ...prev, postTradeEmotion: 4 }))}
+                >
+                  <span className="text-base">🙂</span>
                   <span>Zufrieden</span>
+                </button>
+                <button 
+                  type="button"
+                  className={`flex items-center space-x-1 px-3 py-1.5 rounded text-xs cursor-pointer transition-colors ${currentTrade.postTradeEmotion == 5 ? 'bg-green-100 text-green-800 font-medium' : 'bg-gray-50 text-gray-700 hover:bg-green-50'}`}
+                  onClick={() => setCurrentTrade(prev => ({ ...prev, postTradeEmotion: 5 }))}
+                >
+                  <span className="text-base">😁</span>
                   <span>Euphorisch</span>
-                </div>
+                </button>
               </div>
             </div>
           </div>
