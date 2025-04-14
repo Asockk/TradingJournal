@@ -440,19 +440,6 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             </div>
           </div>
 
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 mb-1 mt-4">
-              Begründung (Rationale)
-            </label>
-            <textarea
-              name="rationale"
-              value={currentTrade.rationale}
-              onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
-              rows="2"
-            ></textarea>
-          </div>
-            
           {/* Exit Details */}
           <div className="md:col-span-2 lg:col-span-3 border-b pb-2 mb-2 mt-4">
             <h3 className="font-medium mb-2">Exit-Details</h3>

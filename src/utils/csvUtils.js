@@ -82,7 +82,6 @@ export const generateSampleCSV = () => {
       fees: 10,
       pnl: '65.00',
       actualRiskReward: '1.30',
-      rationale: 'Bullish momentum after market correction',
       reassessmentTriggers: '',
       notes: 'Good trade, took profit early'
     },
@@ -109,7 +108,6 @@ export const generateSampleCSV = () => {
       fees: 5,
       pnl: '15.00',
       actualRiskReward: '0.75',
-      rationale: 'Overextended rally, expecting retracement',
       reassessmentTriggers: 'Started to reverse earlier than expected',
       notes: 'Closed early to secure profit'
     }
