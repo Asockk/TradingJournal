@@ -11,6 +11,8 @@ import PlanFollowedChart from './charts/PlanFollowedChart';
 import TradeTypePerformanceChart from './charts/TradeTypePerformanceChart';
 import DurationPerformanceChart from './charts/DurationPerformanceChart';
 import PeriodComparisonCard from './stats/PeriodComparisonCard';
+import EmotionPerformanceChart from './charts/EmotionPerformanceChart';
+import EmotionTransitionChart from './charts/EmotionTransitionChart';
 import { calculateStats } from '../utils/statsCalculations';
 import { ArrowLeft } from 'lucide-react';
 
@@ -226,6 +228,15 @@ const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
         
         {/* Asset Performance */}
         <AssetPerformanceChart data={stats.assetPnL.slice(0, 10)} />
+      </div>
+      
+      {/* Emotion Analysis Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        {/* Emotion Performance Chart */}
+        <EmotionPerformanceChart emotionData={stats.emotionPerformance} />
+        
+        {/* Emotion Transition Chart */}
+        <EmotionTransitionChart transitionData={stats.emotionTransitions} />
       </div>
       
       {/* Alpha Trader Charts */}

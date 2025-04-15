@@ -1,6 +1,8 @@
+// src/utils/statsCalculations.js
 import _ from 'lodash';
 import { calculateHourlyPerformance } from './timeStatsUtils';
 import { calculateConvictionPerformance } from './convictionStatsUtils';
+import { calculateEmotionPerformance, calculateEmotionTransitions } from './emotionStatsUtils';
 
 /**
  * Calculate comprehensive statistics based on filtered trades
@@ -77,6 +79,10 @@ export const calculateStats = (filteredTrades) => {
   // Calculate conviction performance
   const convictionPerformance = calculateConvictionPerformance(filteredTrades);
 
+  // Calculate emotion performance
+  const emotionPerformance = calculateEmotionPerformance(filteredTrades);
+  const emotionTransitions = calculateEmotionTransitions(filteredTrades);
+
   // Alpha Trader: Zusätzliche Statistiken
   
   // 1. Streaks (Gewinn-/Verluststrähnen)
@@ -121,6 +127,8 @@ export const calculateStats = (filteredTrades) => {
     cumulativePnL,
     hourlyPerformance,
     convictionPerformance,
+    emotionPerformance,
+    emotionTransitions,
     
     // Alpha Trader Statistiken
     streaks,
