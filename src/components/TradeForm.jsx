@@ -31,6 +31,45 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
       [name]: type === 'checkbox' ? checked : value 
     }));
   };
+  
+  // Helper function to get input field styling based on field type and value
+  const getFieldStyle = (fieldName, isRequired = false, isCalculated = false) => {
+    // Base styles for all fields
+    let className = "w-full p-2 border rounded-md focus:ring-2 focus:ring-blue-300 focus:border-blue-500 transition";
+    
+    // Add required marker style
+    if (isRequired) {
+      className += " border-amber-300";
+    } else {
+      className += " border-gray-300";
+    }
+    
+    // Calculated fields get a distinct background
+    if (isCalculated) {
+      className += " bg-gray-50 text-gray-700";
+    }
+    
+    // Position fields get colored border based on position type
+    if (fieldName === 'position') {
+      if (currentTrade.position === 'Long') {
+        className += " border-l-4 border-l-green-500";
+      } else {
+        className += " border-l-4 border-l-red-500";
+      }
+    }
+    
+    // Fields affected by position type (like price fields)
+    const positionSensitiveFields = ['entryPrice', 'exitPrice', 'stopLoss', 'takeProfit', 'positionSize'];
+    if (positionSensitiveFields.includes(fieldName)) {
+      if (currentTrade.position === 'Long') {
+        className += " focus:ring-green-200";
+      } else {
+        className += " focus:ring-red-200";
+      }
+    }
+    
+    return className;
+  };
 
   // Calculated fields
   useEffect(() => {
@@ -113,10 +152,10 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
   const TabButton = ({ tab, label }) => (
     <button
       type="button"
-      className={`px-4 py-2 font-medium rounded-t-md ${
+      className={`px-4 py-2 font-medium rounded-t-md transition-colors ${
         activeTab === tab 
-          ? 'bg-white border-b-2 border-blue-500 text-blue-600' 
-          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+          ? 'bg-white border-t-2 border-l-2 border-r-2 border-blue-500 text-blue-600 shadow-sm' 
+          : 'bg-gray-100 text-gray-500 hover:bg-gray-200 border-transparent border-t-2 border-l-2 border-r-2'
       }`}
       onClick={() => setActiveTab(tab)}
     >
@@ -126,133 +165,161 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
 
   // Schnelleingabe-Toggle
   const QuickModeToggle = () => (
-    <div className="flex items-center mb-4">
-      <span className="mr-2 text-sm text-gray-600">Modus:</span>
-      <button
-        type="button"
-        className={`px-3 py-1 text-sm rounded-l-md ${
-          !isQuickMode 
-            ? 'bg-blue-500 text-white' 
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        }`}
-        onClick={() => setIsQuickMode(false)}
-      >
-        Detailliert
-      </button>
-      <button
-        type="button"
-        className={`px-3 py-1 text-sm rounded-r-md ${
-          isQuickMode 
-            ? 'bg-blue-500 text-white' 
-            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-        }`}
-        onClick={() => setIsQuickMode(true)}
-      >
-        Schnelleingabe
-      </button>
+    <div className="flex flex-col sm:flex-row sm:items-center mb-4 bg-gray-50 p-2 rounded-lg border border-gray-200">
+      <span className="mr-2 text-sm font-medium text-gray-700 mb-2 sm:mb-0">Eingabemodus:</span>
+      <div className="flex border border-gray-300 rounded-md overflow-hidden shadow-sm">
+        <button
+          type="button"
+          className={`flex-1 px-3 py-2 text-sm transition-colors ${
+            !isQuickMode 
+              ? 'bg-blue-600 text-white font-medium' 
+              : 'bg-white text-gray-700 hover:bg-gray-100'
+          }`}
+          onClick={() => setIsQuickMode(false)}
+        >
+          <span className="flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm0 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clipRule="evenodd" />
+            </svg>
+            Detailliert
+          </span>
+        </button>
+        <button
+          type="button"
+          className={`flex-1 px-3 py-2 text-sm transition-colors ${
+            isQuickMode 
+              ? 'bg-blue-600 text-white font-medium' 
+              : 'bg-white text-gray-700 hover:bg-gray-100'
+          }`}
+          onClick={() => setIsQuickMode(true)}
+        >
+          <span className="flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+            </svg>
+            Schnelleingabe
+          </span>
+        </button>
+      </div>
     </div>
   );
 
   // Schnelleingabe-Formular
   const QuickEntryForm = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Asset *
-        </label>
-        <input
-          type="text"
-          name="asset"
-          value={currentTrade.asset}
-          onChange={handleInputChange}
-          className="w-full p-2 border border-gray-300 rounded-md"
-          placeholder="z.B. BTC, ETH, AAPL"
-          required
-        />
+    <div className="bg-gradient-to-r from-blue-50 to-white rounded-lg p-4 border border-blue-100">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Asset <span className="text-amber-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="asset"
+            value={currentTrade.asset}
+            onChange={handleInputChange}
+            className={getFieldStyle('asset', true)}
+            placeholder="z.B. BTC, ETH, AAPL"
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Position <span className="text-amber-500">*</span>
+          </label>
+          <div className="flex">
+            <button
+              type="button"
+              className={`flex-1 p-2 rounded-l-md border border-r-0 ${
+                currentTrade.position === 'Long'
+                ? 'bg-green-100 text-green-700 border-green-300 font-medium'
+                : 'bg-white text-gray-500 border-gray-300 hover:bg-green-50'
+              }`}
+              onClick={() => setCurrentTrade(prev => ({ ...prev, position: 'Long' }))}
+            >
+              Long
+            </button>
+            <button
+              type="button"
+              className={`flex-1 p-2 rounded-r-md border ${
+                currentTrade.position === 'Short'
+                ? 'bg-red-100 text-red-700 border-red-300 font-medium'
+                : 'bg-white text-gray-500 border-gray-300 hover:bg-red-50'
+              }`}
+              onClick={() => setCurrentTrade(prev => ({ ...prev, position: 'Short' }))}
+            >
+              Short
+            </button>
+          </div>
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Einstiegskurs <span className="text-amber-500">*</span>
+          </label>
+          <input
+            type="number"
+            name="entryPrice"
+            step="0.000001"
+            value={currentTrade.entryPrice}
+            onChange={handleInputChange}
+            className={getFieldStyle('entryPrice', true)}
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Positionsgröße <span className="text-amber-500">*</span>
+          </label>
+          <input
+            type="number"
+            name="positionSize"
+            step="0.01"
+            value={currentTrade.positionSize}
+            onChange={handleInputChange}
+            className={getFieldStyle('positionSize', true)}
+            required
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Entry-Datum
+          </label>
+          <input
+            type="date"
+            name="entryDate"
+            value={currentTrade.entryDate || new Date().toISOString().split('T')[0]}
+            onChange={handleInputChange}
+            className={getFieldStyle('entryDate')}
+          />
+        </div>
+        
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Währung
+          </label>
+          <select
+            name="currency"
+            value={currentTrade.currency}
+            onChange={handleInputChange}
+            className={getFieldStyle('currency')}
+          >
+            <option value="€">EUR (€)</option>
+            <option value="$">USD ($)</option>
+            <option value="£">GBP (£)</option>
+          </select>
+        </div>
       </div>
       
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Position *
-        </label>
-        <select
-          name="position"
-          value={currentTrade.position}
-          onChange={handleInputChange}
-          className="w-full p-2 border border-gray-300 rounded-md"
-          required
-        >
-          <option value="Long">Long</option>
-          <option value="Short">Short</option>
-        </select>
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Einstiegskurs *
-        </label>
-        <input
-          type="number"
-          name="entryPrice"
-          step="0.000001"
-          value={currentTrade.entryPrice}
-          onChange={handleInputChange}
-          className="w-full p-2 border border-gray-300 rounded-md"
-          required
-        />
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Positionsgröße *
-        </label>
-        <input
-          type="number"
-          name="positionSize"
-          step="0.01"
-          value={currentTrade.positionSize}
-          onChange={handleInputChange}
-          className="w-full p-2 border border-gray-300 rounded-md"
-          required
-        />
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Entry-Datum
-        </label>
-        <input
-          type="date"
-          name="entryDate"
-          value={currentTrade.entryDate}
-          onChange={handleInputChange}
-          className="w-full p-2 border border-gray-300 rounded-md"
-        />
-      </div>
-      
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Währung
-        </label>
-        <select
-          name="currency"
-          value={currentTrade.currency}
-          onChange={handleInputChange}
-          className="w-full p-2 border border-gray-300 rounded-md"
-        >
-          <option value="€">EUR (€)</option>
-          <option value="$">USD ($)</option>
-          <option value="£">GBP (£)</option>
-        </select>
-      </div>
-      
-      <div className="md:col-span-2 text-right mt-4">
-        <p className="text-sm text-gray-500 mb-2">
-          * Pflichtfelder für Schnelleingabe
-        </p>
+      <div className="mt-6 flex items-center justify-between border-t border-blue-100 pt-4">
+        <div className="bg-amber-50 text-amber-700 text-sm px-3 py-1 rounded-md">
+          <span className="text-amber-500">*</span> Pflichtfelder für Schnelleingabe
+        </div>
         <button
           type="button"
-          className="px-4 py-2 text-sm text-blue-600 border border-blue-300 rounded-md bg-blue-50 hover:bg-blue-100 mr-2"
+          className="px-4 py-2 text-sm text-blue-600 border border-blue-300 rounded-md bg-blue-50 hover:bg-blue-100 transition-colors"
           onClick={() => setIsQuickMode(false)}
         >
           Zu detaillierter Ansicht wechseln
@@ -264,17 +331,17 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
   // Entry Tab Inhalt
   const EntryTabContent = () => (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2 bg-blue-50/30 rounded-md">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Entry-Datum
+            Entry-Datum <span className="text-amber-500">*</span>
           </label>
           <input
             type="date"
             name="entryDate"
             value={currentTrade.entryDate}
             onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className={getFieldStyle('entryDate', true)}
             required
           />
         </div>
@@ -288,36 +355,39 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             name="entryTime"
             value={currentTrade.entryTime}
             onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className={getFieldStyle('entryTime')}
           />
         </div>
         
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Position
+            Position <span className="text-amber-500">*</span>
           </label>
-          <select
-            name="position"
-            value={currentTrade.position}
-            onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
-            required
-          >
-            <option value="Long">Long</option>
-            <option value="Short">Short</option>
-          </select>
+          <div className="relative">
+            <select
+              name="position"
+              value={currentTrade.position}
+              onChange={handleInputChange}
+              className={getFieldStyle('position', true)}
+              required
+            >
+              <option value="Long">Long</option>
+              <option value="Short">Short</option>
+            </select>
+            <div className={`absolute inset-y-0 left-0 w-1 rounded-l-md ${currentTrade.position === 'Long' ? 'bg-green-500' : 'bg-red-500'}`}></div>
+          </div>
         </div>
         
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Asset
+            Asset <span className="text-amber-500">*</span>
           </label>
           <input
             type="text"
             name="asset"
             value={currentTrade.asset}
             onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className={getFieldStyle('asset', true)}
             placeholder="z.B. BTC, ETH, AAPL"
             required
           />
@@ -331,7 +401,7 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             name="assetClass"
             value={currentTrade.assetClass}
             onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className={getFieldStyle('assetClass')}
           >
             <option value="Crypto">Crypto</option>
             <option value="Aktien">Aktien</option>
@@ -348,7 +418,7 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             name="tradeType"
             value={currentTrade.tradeType}
             onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className={getFieldStyle('tradeType')}
           >
             <option value="Trend-Following">Trend-Following</option>
             <option value="Mean-Reversion">Mean-Reversion</option>
@@ -368,7 +438,7 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             name="marketCondition"
             value={currentTrade.marketCondition}
             onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className={getFieldStyle('marketCondition')}
           >
             <option value="Bullish">Bullish</option>
             <option value="Bearish">Bearish</option>
@@ -438,7 +508,7 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             max="5"
             value={currentTrade.conviction}
             onChange={handleInputChange}
-            className="w-full"
+            className="w-full accent-blue-500"
           />
           <div className="flex justify-between text-xs text-gray-500">
             <span>1</span>
@@ -460,13 +530,13 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             step="0.1"
             value={currentTrade.leverage}
             onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className={getFieldStyle('leverage')}
           />
         </div>
         
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Positionsgröße
+            Positionsgröße <span className="text-amber-500">*</span>
           </label>
           <input
             type="number"
@@ -474,7 +544,7 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             step="0.01"
             value={currentTrade.positionSize}
             onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className={getFieldStyle('positionSize', true)}
             required
           />
         </div>
@@ -487,7 +557,7 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             name="currency"
             value={currentTrade.currency}
             onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className={getFieldStyle('currency')}
           >
             <option value="€">EUR (€)</option>
             <option value="$">USD ($)</option>
@@ -497,7 +567,7 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
         
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
-            Einstiegskurs
+            Einstiegskurs <span className="text-amber-500">*</span>
           </label>
           <input
             type="number"
@@ -505,7 +575,7 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             step="0.000001"
             value={currentTrade.entryPrice}
             onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className={getFieldStyle('entryPrice', true)}
             required
           />
         </div>
@@ -514,33 +584,58 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Stop Loss
           </label>
-          <input
-            type="number"
-            name="stopLoss"
-            step="0.000001"
-            value={currentTrade.stopLoss}
-            onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
-          />
+          <div className={`relative ${currentTrade.position === 'Long' ? 'group' : ''}`}>
+            <input
+              type="number"
+              name="stopLoss"
+              step="0.000001"
+              value={currentTrade.stopLoss}
+              onChange={handleInputChange}
+              className={getFieldStyle('stopLoss')}
+            />
+            {currentTrade.position === 'Long' && (
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition bg-red-50 text-red-500 text-xs px-1 py-0.5 rounded">
+                Unter Entry
+              </div>
+            )}
+            {currentTrade.position === 'Short' && (
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition bg-red-50 text-red-500 text-xs px-1 py-0.5 rounded">
+                Über Entry
+              </div>
+            )}
+          </div>
         </div>
         
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Take Profit
           </label>
-          <input
-            type="number"
-            name="takeProfit"
-            step="0.000001"
-            value={currentTrade.takeProfit}
-            onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
-          />
+          <div className={`relative ${currentTrade.position === 'Long' ? 'group' : ''}`}>
+            <input
+              type="number"
+              name="takeProfit"
+              step="0.000001"
+              value={currentTrade.takeProfit}
+              onChange={handleInputChange}
+              className={getFieldStyle('takeProfit')}
+            />
+            {currentTrade.position === 'Long' && (
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition bg-green-50 text-green-500 text-xs px-1 py-0.5 rounded">
+                Über Entry
+              </div>
+            )}
+            {currentTrade.position === 'Short' && (
+              <div className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition bg-green-50 text-green-500 text-xs px-1 py-0.5 rounded">
+                Unter Entry
+              </div>
+            )}
+          </div>
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
             Risk/Reward bei Entry
+            <span className="ml-1 px-1 py-0.5 bg-gray-100 text-gray-500 text-xs rounded">Berechnet</span>
           </label>
           <input
             type="number"
@@ -548,13 +643,14 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             step="0.01"
             value={currentTrade.entryRiskReward}
             readOnly
-            className="w-full p-2 border border-gray-300 rounded-md bg-gray-50"
+            className={getFieldStyle('entryRiskReward', false, true)}
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
+          <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
             Erwarteter Gewinn/Verlust
+            <span className="ml-1 px-1 py-0.5 bg-gray-100 text-gray-500 text-xs rounded">Berechnet</span>
           </label>
           <input
             type="number"
@@ -562,7 +658,7 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             step="0.01"
             value={currentTrade.expectedPnL}
             readOnly
-            className="w-full p-2 border border-gray-300 rounded-md bg-gray-50"
+            className={getFieldStyle('expectedPnL', false, true)}
           />
         </div>
       </div>
@@ -577,7 +673,7 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
               name="tradePlan"
               value={currentTrade.tradePlan}
               onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className={getFieldStyle('tradePlan')}
               rows="3"
               placeholder="Detaillierter Plan für diesen Trade inkl. Setup, Risikomanagement..."
             ></textarea>
@@ -590,19 +686,23 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
               name="exitCriteria"
               value={currentTrade.exitCriteria}
               onChange={handleInputChange}
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className={getFieldStyle('exitCriteria')}
               rows="3"
               placeholder="Konkrete Bedingungen, unter denen der Trade beendet wird..."
             ></textarea>
           </div>
         </div>
       </div>
+      
+      <div className="mt-3 text-xs text-gray-500 bg-amber-50 p-2 rounded">
+        <span className="text-amber-500">*</span> Pflichtfelder
+      </div>
     </>
   );
 
   // Exit Tab Inhalt
   const ExitTabContent = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2 bg-red-50/20 rounded-md">
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-1">
           Exit-Datum
@@ -612,7 +712,7 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
           name="exitDate"
           value={currentTrade.exitDate}
           onChange={handleInputChange}
-          className="w-full p-2 border border-gray-300 rounded-md"
+          className={getFieldStyle('exitDate')}
         />
       </div>
       
@@ -625,20 +725,21 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
           name="exitTime"
           value={currentTrade.exitTime}
           onChange={handleInputChange}
-          className="w-full p-2 border border-gray-300 rounded-md"
+          className={getFieldStyle('exitTime')}
         />
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
           Dauer (Tage)
+          <span className="ml-1 px-1 py-0.5 bg-gray-100 text-gray-500 text-xs rounded">Berechnet</span>
         </label>
         <input
           type="number"
           name="duration"
           value={currentTrade.duration}
           readOnly
-          className="w-full p-2 border border-gray-300 rounded-md bg-gray-50"
+          className={getFieldStyle('duration', false, true)}
         />
       </div>
       
@@ -652,7 +753,7 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
           step="0.000001"
           value={currentTrade.exitPrice}
           onChange={handleInputChange}
-          className="w-full p-2 border border-gray-300 rounded-md"
+          className={getFieldStyle('exitPrice')}
         />
       </div>
       
@@ -666,33 +767,40 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
           step="0.01"
           value={currentTrade.fees}
           onChange={handleInputChange}
-          className="w-full p-2 border border-gray-300 rounded-md"
+          className={getFieldStyle('fees')}
         />
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
           Profit/Loss
+          <span className="ml-1 px-1 py-0.5 bg-gray-100 text-gray-500 text-xs rounded">Berechnet</span>
         </label>
-        <input
-          type="number"
-          name="pnl"
-          step="0.01"
-          value={currentTrade.pnl}
-          readOnly
-          className={`w-full p-2 border rounded-md ${
-            parseFloat(currentTrade.pnl) > 0 
-              ? 'bg-green-50 text-green-700 border-green-300' 
-              : parseFloat(currentTrade.pnl) < 0 
-                ? 'bg-red-50 text-red-700 border-red-300' 
-                : 'bg-gray-50 border-gray-300'
-          }`}
-        />
+        <div className="relative">
+          <input
+            type="number"
+            name="pnl"
+            step="0.01"
+            value={currentTrade.pnl}
+            readOnly
+            className={`w-full p-2 border rounded-md ${
+              parseFloat(currentTrade.pnl) > 0 
+                ? 'bg-green-50 text-green-700 border-green-300' 
+                : parseFloat(currentTrade.pnl) < 0 
+                  ? 'bg-red-50 text-red-700 border-red-300' 
+                  : 'bg-gray-50 border-gray-300'
+            }`}
+          />
+          {parseFloat(currentTrade.pnl) > 0 && (
+            <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-green-500">+</div>
+          )}
+        </div>
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">
+        <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
           Actual Risk/Reward
+          <span className="ml-1 px-1 py-0.5 bg-gray-100 text-gray-500 text-xs rounded">Berechnet</span>
         </label>
         <input
           type="number"
@@ -700,7 +808,7 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
           step="0.01"
           value={currentTrade.actualRiskReward}
           readOnly
-          className="w-full p-2 border border-gray-300 rounded-md bg-gray-50"
+          className={getFieldStyle('actualRiskReward', false, true)}
         />
       </div>
       
