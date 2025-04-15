@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Calendar, ChevronDown, Download, Filter, BarChart2, Upload, Plus } from 'lucide-react';
+import { Calendar, ChevronDown, Download, Filter, BarChart2, Upload, Plus, BookMarked } from 'lucide-react';
 import Header from './components/Header';
 import TradeTable from './components/TradeTable';
 import TradeForm from './components/TradeForm';
 import FilterPanel from './components/FilterPanel';
 import StatisticsPanel from './components/StatisticsPanel';
+import TemplateModal from './components/templates/TemplateModal';
 import { loadTrades, saveTrades } from './utils/storageUtils';
 import { filterTrades } from './utils/filterUtils';
 import { initialTradeState, initialFilterState } from './utils/constants';
@@ -19,6 +20,7 @@ const App = () => {
   const [activeTab, setActiveTab] = useState('trades');
   const [filters, setFilters] = useState(initialFilterState);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
 
   // Load trades from localStorage on initial render
   useEffect(() => {
@@ -90,6 +92,16 @@ const App = () => {
   const resetFilters = () => {
     setFilters(initialFilterState);
   };
+  
+  // Template application handler
+  const handleApplyTemplate = (templateData) => {
+    setCurrentTrade(prev => ({
+      ...initialTradeState,
+      ...templateData,
+      entryDate: new Date().toISOString().split('T')[0] // Use today's date as default
+    }));
+    setIsFormOpen(true);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
@@ -144,6 +156,15 @@ const App = () => {
                     Filter zurücksetzen
                   </button>
                 )}
+                
+                {/* Vorlagen-Button */}
+                <button
+                  onClick={() => setIsTemplateModalOpen(true)}
+                  className="flex items-center gap-1 bg-white p-2 rounded-md border border-gray-300 shadow-sm"
+                >
+                  <BookMarked size={18} />
+                  Vorlagen
+                </button>
               </div>
               
               <button
@@ -176,6 +197,13 @@ const App = () => {
                 isEditing={!!editingId}
               />
             )}
+            
+            {/* Templates Modal */}
+            <TemplateModal
+              isOpen={isTemplateModalOpen}
+              onClose={() => setIsTemplateModalOpen(false)}
+              onApplyTemplate={handleApplyTemplate}
+            />
             
             {/* Trades Table */}
             <TradeTable 

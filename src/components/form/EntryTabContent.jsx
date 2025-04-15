@@ -2,8 +2,18 @@
 import React from 'react';
 import { getFieldStyle } from '../../utils/formUtils';
 import EmotionSelector from './EmotionSelector';
+import FavoriteButton from '../favorites/FavoriteButton';
+import FavoritesSelector from '../favorites/FavoritesSelector';
 
 const EntryTabContent = ({ currentTrade, handleInputChange, setCurrentTrade }) => {
+  // Favoriten-Handler
+  const handleSelectFavorite = (fieldName, value) => {
+    setCurrentTrade(prev => ({
+      ...prev,
+      [fieldName]: value
+    }));
+  };
+
   return (
     <>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-2 bg-blue-50/30 rounded-md">
@@ -54,24 +64,45 @@ const EntryTabContent = ({ currentTrade, handleInputChange, setCurrentTrade }) =
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Asset <span className="text-amber-500">*</span>
-          </label>
-          <input
-            type="text"
-            name="asset"
-            value={currentTrade.asset}
-            onChange={handleInputChange}
-            className={getFieldStyle('asset', currentTrade, true)}
-            placeholder="z.B. BTC, ETH, AAPL"
-            required
+          <div className="flex justify-between items-center">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Asset <span className="text-amber-500">*</span>
+            </label>
+            <FavoriteButton 
+              category="assets"
+              item={currentTrade.asset}
+              size={14}
+            />
+          </div>
+          <div className="relative">
+            <input
+              type="text"
+              name="asset"
+              value={currentTrade.asset}
+              onChange={handleInputChange}
+              className={getFieldStyle('asset', currentTrade, true)}
+              placeholder="z.B. BTC, ETH, AAPL"
+              required
+            />
+          </div>
+          <FavoritesSelector 
+            category="assets" 
+            onSelect={(value) => handleSelectFavorite('asset', value)}
+            className="mt-1"
           />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Asset-Klasse
-          </label>
+          <div className="flex justify-between items-center">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Asset-Klasse
+            </label>
+            <FavoriteButton 
+              category="assetClasses"
+              item={currentTrade.assetClass}
+              size={14}
+            />
+          </div>
           <select
             name="assetClass"
             value={currentTrade.assetClass}
@@ -83,12 +114,24 @@ const EntryTabContent = ({ currentTrade, handleInputChange, setCurrentTrade }) =
             <option value="Forex">Forex</option>
             <option value="Rohstoffe">Rohstoffe</option>
           </select>
+          <FavoritesSelector 
+            category="assetClasses" 
+            onSelect={(value) => handleSelectFavorite('assetClass', value)}
+            className="mt-1"
+          />
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Trade-Typ
-          </label>
+          <div className="flex justify-between items-center">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Trade-Typ
+            </label>
+            <FavoriteButton 
+              category="tradeTypes"
+              item={currentTrade.tradeType}
+              size={14}
+            />
+          </div>
           <select
             name="tradeType"
             value={currentTrade.tradeType}
@@ -103,6 +146,11 @@ const EntryTabContent = ({ currentTrade, handleInputChange, setCurrentTrade }) =
             <option value="Fundamental">Fundamental</option>
             <option value="Other">Sonstige</option>
           </select>
+          <FavoritesSelector 
+            category="tradeTypes" 
+            onSelect={(value) => handleSelectFavorite('tradeType', value)}
+            className="mt-1"
+          />
         </div>
         
         <div>

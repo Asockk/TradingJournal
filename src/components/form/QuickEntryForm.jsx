@@ -1,14 +1,31 @@
 import React from 'react';
 import { getFieldStyle } from '../../utils/formUtils';
+import FavoriteButton from '../favorites/FavoriteButton';
+import FavoritesSelector from '../favorites/FavoritesSelector';
 
 const QuickEntryForm = ({ currentTrade, handleInputChange, setCurrentTrade, setIsQuickMode }) => {
+  // Favoriten-Handler
+  const handleSelectFavorite = (fieldName, value) => {
+    setCurrentTrade(prev => ({
+      ...prev,
+      [fieldName]: value
+    }));
+  };
+
   return (
     <div className="bg-gradient-to-r from-blue-50 to-white rounded-lg p-4 border border-blue-100">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Asset <span className="text-amber-500">*</span>
-          </label>
+          <div className="flex justify-between items-center">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Asset <span className="text-amber-500">*</span>
+            </label>
+            <FavoriteButton 
+              category="assets"
+              item={currentTrade.asset}
+              size={14}
+            />
+          </div>
           <input
             type="text"
             name="asset"
@@ -17,6 +34,11 @@ const QuickEntryForm = ({ currentTrade, handleInputChange, setCurrentTrade, setI
             className={getFieldStyle('asset', currentTrade, true)}
             placeholder="z.B. BTC, ETH, AAPL"
             required
+          />
+          <FavoritesSelector 
+            category="assets" 
+            onSelect={(value) => handleSelectFavorite('asset', value)}
+            className="mt-1"
           />
         </div>
         
@@ -94,19 +116,35 @@ const QuickEntryForm = ({ currentTrade, handleInputChange, setCurrentTrade, setI
         </div>
         
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">
-            Währung
-          </label>
+          <div className="flex justify-between items-center">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Trade-Typ
+            </label>
+            <FavoriteButton 
+              category="tradeTypes"
+              item={currentTrade.tradeType}
+              size={14}
+            />
+          </div>
           <select
-            name="currency"
-            value={currentTrade.currency}
+            name="tradeType"
+            value={currentTrade.tradeType}
             onChange={handleInputChange}
-            className={getFieldStyle('currency', currentTrade)}
+            className={getFieldStyle('tradeType', currentTrade)}
           >
-            <option value="€">EUR (€)</option>
-            <option value="$">USD ($)</option>
-            <option value="£">GBP (£)</option>
+            <option value="Trend-Following">Trend-Following</option>
+            <option value="Mean-Reversion">Mean-Reversion</option>
+            <option value="Breakout">Breakout</option>
+            <option value="News">News-basiert</option>
+            <option value="Technical">Technische Analyse</option>
+            <option value="Fundamental">Fundamental</option>
+            <option value="Other">Sonstige</option>
           </select>
+          <FavoritesSelector 
+            category="tradeTypes" 
+            onSelect={(value) => handleSelectFavorite('tradeType', value)}
+            className="mt-1"
+          />
         </div>
       </div>
       

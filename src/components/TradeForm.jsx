@@ -8,9 +8,12 @@ import TabButton from './form/TabButton';
 import EntryTabContent from './form/EntryTabContent';
 import ExitTabContent from './form/ExitTabContent';
 import AnalysisTabContent from './form/AnalysisTabContent';
+import TemplateSelector from './templates/TemplateSelector';
+import TemplateModal from './templates/TemplateModal';
 
 const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
+  const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   
   const {
     currentTrade,
@@ -30,6 +33,14 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
   const modalSizeClasses = isFullScreen
     ? "fixed inset-0 max-w-full max-h-full m-0 rounded-none"
     : "max-w-4xl w-full max-h-[85vh] mx-auto my-8 rounded-lg";
+    
+  // Handler für das Anwenden von Vorlagen
+  const handleApplyTemplate = (templateData) => {
+    setCurrentTrade(prev => ({
+      ...prev,
+      ...templateData
+    }));
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-auto bg-black/30 backdrop-blur-sm flex justify-center items-start pt-4 pb-4">
@@ -64,6 +75,19 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
         </div>
         
         <form ref={formRef} onSubmit={handleSubmit} className="p-4">
+          {/* Vorlagen-Selektor anzeigen */}
+          <div className="flex justify-between items-start mb-4">
+            <TemplateSelector 
+              onSelectTemplate={handleApplyTemplate}
+              onManageTemplates={() => setIsTemplateModalOpen(true)}
+            />
+            
+            <div className="flex items-center">
+              {/* Modustoggle (Schnell vs. Detailliert) */}
+              <QuickModeToggle isQuickMode={isQuickMode} setIsQuickMode={setIsQuickMode} />
+            </div>
+          </div>
+          
           {/* Keyboard shortcuts info for mobile */}
           <div className="sm:hidden mb-2 text-xs text-gray-500 bg-gray-100 rounded p-2">
             Tastaturkürzel:
@@ -73,9 +97,6 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
               <div>• Strg+→/←: Tab wechseln</div>
             </div>
           </div>
-          
-          {/* Modustoggle (Schnell vs. Detailliert) */}
-          <QuickModeToggle isQuickMode={isQuickMode} setIsQuickMode={setIsQuickMode} />
           
           {/* Mobile Navigation: Vorheriges Feld */}
           <div className="sm:hidden mb-2">
@@ -141,6 +162,13 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             </button>
             <button
               type="button"
+              onClick={() => setIsTemplateModalOpen(true)}
+              className="px-4 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-md hover:bg-gray-200 transition-colors"
+            >
+              Als Vorlage speichern
+            </button>
+            <button
+              type="button"
               onClick={handleSaveAndAddNew}
               className="px-4 py-2 bg-green-600 text-white rounded-md flex items-center gap-1 hover:bg-green-700 transition-colors shadow-sm"
             >
@@ -157,6 +185,14 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             </button>
           </div>
         </form>
+        
+        {/* Template Modal */}
+        <TemplateModal
+          isOpen={isTemplateModalOpen}
+          onClose={() => setIsTemplateModalOpen(false)}
+          onApplyTemplate={handleApplyTemplate}
+          currentTrade={currentTrade}
+        />
       </div>
     </div>
   );
