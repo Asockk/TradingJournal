@@ -1,5 +1,6 @@
+// src/components/TradeForm.jsx
 import React from 'react';
-import { X } from 'lucide-react';
+import { X, Save, Plus, ArrowUp, ArrowDown } from 'lucide-react';
 import { useTradeForm } from '../hooks/useTradeForm';
 import QuickModeToggle from './form/QuickModeToggle';
 import QuickEntryForm from './form/QuickEntryForm';
@@ -17,7 +18,10 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
     isQuickMode,
     setIsQuickMode,
     handleInputChange,
-    handleSubmit
+    handleSubmit,
+    handleSaveAndAddNew,
+    goToPreviousField,
+    formRef
   } = useTradeForm(trade, onSubmit, onClose, isEditing);
 
   return (
@@ -27,17 +31,45 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
           <h2 className="text-xl font-semibold">
             {isEditing ? 'Trade bearbeiten' : 'Neuer Trade'}
           </h2>
-          <button 
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <X size={24} />
-          </button>
+          <div className="flex space-x-2">
+            <div className="hidden sm:block text-xs text-gray-500 bg-gray-100 rounded p-1">
+              <div>Strg+Enter: Speichern</div>
+              <div>Strg+Shift+Enter: Speichern & Neu</div>
+            </div>
+            <button 
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700"
+            >
+              <X size={24} />
+            </button>
+          </div>
         </div>
         
-        <form onSubmit={handleSubmit} className="p-4">
+        <form ref={formRef} onSubmit={handleSubmit} className="p-4">
+          {/* Keyboard shortcuts info for mobile */}
+          <div className="sm:hidden mb-2 text-xs text-gray-500 bg-gray-100 rounded p-2">
+            Tastaturkürzel:
+            <div className="grid grid-cols-2 gap-2 mt-1">
+              <div>• Strg+Enter: Speichern</div>
+              <div>• Strg+Shift+Enter: Speichern & Neu</div>
+              <div>• Strg+→/←: Tab wechseln</div>
+            </div>
+          </div>
+          
           {/* Modustoggle (Schnell vs. Detailliert) */}
           <QuickModeToggle isQuickMode={isQuickMode} setIsQuickMode={setIsQuickMode} />
+          
+          {/* Mobile Navigation: Vorheriges Feld */}
+          <div className="sm:hidden mb-2">
+            <button
+              type="button"
+              onClick={goToPreviousField}
+              className="flex items-center gap-1 px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md border border-gray-300"
+            >
+              <ArrowUp size={14} />
+              Vorheriges Feld
+            </button>
+          </div>
           
           {/* Zeige Schnellmodus oder Tab-Modus */}
           {isQuickMode ? (
@@ -90,9 +122,19 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
               Abbrechen
             </button>
             <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md"
+              type="button"
+              onClick={handleSaveAndAddNew}
+              className="px-4 py-2 bg-green-600 text-white rounded-md flex items-center gap-1"
             >
+              <Save size={16} />
+              <Plus size={16} />
+              Speichern & Neu
+            </button>
+            <button
+              type="submit"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center gap-1"
+            >
+              <Save size={16} />
               {isEditing ? 'Aktualisieren' : 'Speichern'}
             </button>
           </div>

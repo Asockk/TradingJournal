@@ -1,5 +1,7 @@
+// src/components/form/ExitTabContent.jsx
 import React from 'react';
-import { getFieldStyle, EmotionButton } from '../../utils/formUtils';
+import { getFieldStyle } from '../../utils/formUtils';
+import EmotionSelector from './EmotionSelector';
 
 const ExitTabContent = ({ currentTrade, handleInputChange, setCurrentTrade }) => {
   return (
@@ -114,51 +116,12 @@ const ExitTabContent = ({ currentTrade, handleInputChange, setCurrentTrade }) =>
       </div>
       
       <div className="lg:col-span-2">
-        <label className="block text-sm font-medium text-gray-700 mb-1">
-          Emotionaler Zustand (nach Trade)
-        </label>
-        <div className="flex flex-wrap gap-2">
-          <EmotionButton 
-            value={1}
-            currentValue={currentTrade.postTradeEmotion}
-            onClick={() => setCurrentTrade(prev => ({ ...prev, postTradeEmotion: 1 }))}
-            emoji="😠"
-            label="Frustriert"
-            colorClass="bg-red-100 text-red-800"
-          />
-          <EmotionButton 
-            value={2}
-            currentValue={currentTrade.postTradeEmotion}
-            onClick={() => setCurrentTrade(prev => ({ ...prev, postTradeEmotion: 2 }))}
-            emoji="😕"
-            label="Unzufrieden"
-            colorClass="bg-orange-100 text-orange-800"
-          />
-          <EmotionButton 
-            value={3}
-            currentValue={currentTrade.postTradeEmotion}
-            onClick={() => setCurrentTrade(prev => ({ ...prev, postTradeEmotion: 3 }))}
-            emoji="😐"
-            label="Neutral"
-            colorClass="bg-yellow-100 text-yellow-800"
-          />
-          <EmotionButton 
-            value={4}
-            currentValue={currentTrade.postTradeEmotion}
-            onClick={() => setCurrentTrade(prev => ({ ...prev, postTradeEmotion: 4 }))}
-            emoji="🙂"
-            label="Zufrieden"
-            colorClass="bg-blue-100 text-blue-800"
-          />
-          <EmotionButton 
-            value={5}
-            currentValue={currentTrade.postTradeEmotion}
-            onClick={() => setCurrentTrade(prev => ({ ...prev, postTradeEmotion: 5 }))}
-            emoji="😁"
-            label="Euphorisch"
-            colorClass="bg-green-100 text-green-800"
-          />
-        </div>
+        <EmotionSelector
+          value={currentTrade.postTradeEmotion}
+          onChange={(value) => setCurrentTrade(prev => ({ ...prev, postTradeEmotion: value }))}
+          type="post"
+          label="Emotionaler Zustand (nach Trade)"
+        />
       </div>
     </div>
   );
