@@ -1,6 +1,6 @@
 // src/components/TradeForm.jsx
-import React from 'react';
-import { X, Save, Plus, ArrowUp, ArrowDown } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Save, Plus, ArrowUp, ArrowDown, Maximize, Minimize } from 'lucide-react';
 import { useTradeForm } from '../hooks/useTradeForm';
 import QuickModeToggle from './form/QuickModeToggle';
 import QuickEntryForm from './form/QuickEntryForm';
@@ -10,6 +10,8 @@ import ExitTabContent from './form/ExitTabContent';
 import AnalysisTabContent from './form/AnalysisTabContent';
 
 const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
+  const [isFullScreen, setIsFullScreen] = useState(false);
+  
   const {
     currentTrade,
     setCurrentTrade,
@@ -24,21 +26,37 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
     formRef
   } = useTradeForm(trade, onSubmit, onClose, isEditing);
 
+  // Bestimme Modal-Größe basierend auf isFullScreen
+  const modalSizeClasses = isFullScreen
+    ? "fixed inset-0 max-w-full max-h-full m-0 rounded-none"
+    : "max-w-4xl w-full max-h-[85vh] mx-auto my-8 rounded-lg";
+
   return (
-    <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex justify-center items-start pt-4 pb-20">
-      <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-full overflow-auto">
-        <div className="flex justify-between items-center p-4 border-b">
+    <div className="fixed inset-0 z-50 overflow-auto bg-black/30 backdrop-blur-sm flex justify-center items-start pt-4 pb-4">
+      <div className={`bg-white shadow-2xl overflow-auto transition-all duration-300 ${modalSizeClasses}`}>
+        <div className="sticky top-0 z-10 flex justify-between items-center p-4 border-b bg-white">
           <h2 className="text-xl font-semibold">
             {isEditing ? 'Trade bearbeiten' : 'Neuer Trade'}
           </h2>
-          <div className="flex space-x-2">
+          <div className="flex space-x-3 items-center">
             <div className="hidden sm:block text-xs text-gray-500 bg-gray-100 rounded p-1">
               <div>Strg+Enter: Speichern</div>
               <div>Strg+Shift+Enter: Speichern & Neu</div>
             </div>
+            
+            {/* Toggle Vollbild-Modus */}
+            <button
+              type="button"
+              onClick={() => setIsFullScreen(!isFullScreen)}
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
+              aria-label={isFullScreen ? "Minimieren" : "Maximieren"}
+            >
+              {isFullScreen ? <Minimize size={20} /> : <Maximize size={20} />}
+            </button>
+            
             <button 
               onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
+              className="text-gray-500 hover:text-gray-700 focus:outline-none"
             >
               <X size={24} />
             </button>
@@ -82,7 +100,7 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
           ) : (
             <>
               {/* Tab-Navigation */}
-              <div className="flex border-b mb-4">
+              <div className="flex sticky top-[73px] z-10 border-b mb-4 bg-white">
                 <TabButton tab="entry" label="Entry" activeTab={activeTab} onClick={setActiveTab} />
                 <TabButton tab="exit" label="Exit" activeTab={activeTab} onClick={setActiveTab} />
                 <TabButton tab="analysis" label="Analyse" activeTab={activeTab} onClick={setActiveTab} />
@@ -113,18 +131,18 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             </>
           )}
           
-          <div className="mt-4 flex justify-end gap-2">
+          <div className="mt-4 flex justify-end gap-2 sticky bottom-0 bg-white p-2 border-t">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 border border-gray-300 rounded-md"
+              className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
             >
               Abbrechen
             </button>
             <button
               type="button"
               onClick={handleSaveAndAddNew}
-              className="px-4 py-2 bg-green-600 text-white rounded-md flex items-center gap-1"
+              className="px-4 py-2 bg-green-600 text-white rounded-md flex items-center gap-1 hover:bg-green-700 transition-colors shadow-sm"
             >
               <Save size={16} />
               <Plus size={16} />
@@ -132,7 +150,7 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
             </button>
             <button
               type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center gap-1"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center gap-1 hover:bg-blue-700 transition-colors shadow-sm"
             >
               <Save size={16} />
               {isEditing ? 'Aktualisieren' : 'Speichern'}
