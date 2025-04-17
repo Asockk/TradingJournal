@@ -17,6 +17,7 @@ import PeriodComparisonCard from './PeriodComparisonCard';
 import RiskRewardComparisonChart from '../charts/RiskRewardComparisonChart';
 import StopLossAdherenceChart from '../charts/StopLossAdherenceChart';
 import DrawdownAnalysisChart from '../charts/DrawdownAnalysisChart';
+import PositionSizeOptimizationPanel from './PositionSizeOptimizationPanel'; // HIER: Neuer Import
 import { calculateStats } from '../../utils/statsCalculations';
 import { ArrowLeft } from 'lucide-react';
 
@@ -297,6 +298,16 @@ const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
       {/* Drawdown Analysis - Full width for this one */}
       <ChartWrapper mdCols={1}>
         <DrawdownAnalysisChart drawdownData={stats.drawdownAnalysis} />
+      </ChartWrapper>
+      
+      {/* NEUER ABSCHNITT: Position Size Optimization */}
+      <div className="mb-4">
+        <h3 className="text-lg font-medium mb-2">Positionsgrößen-Optimierung</h3>
+      </div>
+      
+      {/* NEUE KOMPONENTE: Position Size Optimization Panel */}
+      <ChartWrapper mdCols={1}>
+        <PositionSizeOptimizationPanel trades={timeFilteredTrades} />
       </ChartWrapper>
       
       {/* Asset Performance Table */}
