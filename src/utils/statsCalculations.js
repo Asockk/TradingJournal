@@ -3,6 +3,11 @@ import _ from 'lodash';
 import { calculateHourlyPerformance } from './timeStatsUtils';
 import { calculateConvictionPerformance } from './convictionStatsUtils';
 import { calculateEmotionPerformance, calculateEmotionTransitions } from './emotionStatsUtils';
+import { 
+  calculateRiskRewardComparison, 
+  calculateStopLossAdherence, 
+  calculateDrawdownAnalysis 
+} from './riskStatsUtils';
 
 /**
  * Calculate comprehensive statistics based on filtered trades
@@ -112,6 +117,11 @@ export const calculateStats = (filteredTrades) => {
   // 9. Wochentag-Performance
   const weekdayStats = calculateWeekdayStats(filteredTrades);
 
+  // Risk management analysis
+  const riskRewardComparison = calculateRiskRewardComparison(filteredTrades);
+  const stopLossAdherence = calculateStopLossAdherence(filteredTrades);
+  const drawdownAnalysis = calculateDrawdownAnalysis(filteredTrades);
+
   return {
     tradeCount: filteredTrades.length,
     winRate: (profitTrades.length / filteredTrades.length) * 100,
@@ -139,7 +149,12 @@ export const calculateStats = (filteredTrades) => {
     tradeTypeStats,
     marketConditionStats,
     durationStats,
-    weekdayStats
+    weekdayStats,
+    
+    // Risk management statistics
+    riskRewardComparison,
+    stopLossAdherence,
+    drawdownAnalysis
   };
 };
 

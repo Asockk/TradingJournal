@@ -1,18 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent } from './ui/card';
-import StatisticsCards from './stats/StatisticsCards';
-import AlphaTraderCards from './stats/AlphaTraderCards';
-import EquityChart from './charts/EquityChart';
-import AssetPerformanceChart from './charts/AssetPerformanceChart';
-import AssetPerformanceTable from './stats/AssetPerformanceTable';
-import HourlyPerformanceHeatmap from './charts/HourlyPerformanceHeatmap';
-import ConvictionPerformanceChart from './charts/ConvictionPerformanceChart';
-import WeekdayPerformanceChart from './charts/WeekdayPerformanceChart';
-import PlanFollowedChart from './charts/PlanFollowedChart';
-import TradeTypePerformanceChart from './charts/TradeTypePerformanceChart';
-import DurationPerformanceChart from './charts/DurationPerformanceChart';
-import PeriodComparisonCard from './stats/PeriodComparisonCard';
-import { calculateStats } from '../utils/statsCalculations';
+import { Card, CardContent } from '../ui/card';
+import StatisticsCards from './StatisticsCards';
+import AlphaTraderCards from './AlphaTraderCards';
+import EquityChart from '../charts/EquityChart';
+import AssetPerformanceChart from '../charts/AssetPerformanceChart';
+import AssetPerformanceTable from './AssetPerformanceTable';
+import HourlyPerformanceHeatmap from '../charts/HourlyPerformanceHeatmap';
+import ConvictionPerformanceChart from '../charts/ConvictionPerformanceChart';
+import WeekdayPerformanceChart from '../charts/WeekdayPerformanceChart';
+import PlanFollowedChart from '../charts/PlanFollowedChart';
+import TradeTypePerformanceChart from '../charts/TradeTypePerformanceChart';
+import DurationPerformanceChart from '../charts/DurationPerformanceChart';
+import EmotionPerformanceChart from '../charts/EmotionPerformanceChart';
+import EmotionTransitionChart from '../charts/EmotionTransitionChart';
+import PeriodComparisonCard from './PeriodComparisonCard';
+import RiskRewardComparisonChart from '../charts/RiskRewardComparisonChart';
+import StopLossAdherenceChart from '../charts/StopLossAdherenceChart';
+import DrawdownAnalysisChart from '../charts/DrawdownAnalysisChart';
+import { calculateStats } from '../../utils/statsCalculations';
 import { ArrowLeft } from 'lucide-react';
 
 // Komponente für Zeitbereichsauswahl
@@ -240,6 +245,15 @@ const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
         <AssetPerformanceChart data={stats.assetPnL.slice(0, 10)} />
       </ChartWrapper>
       
+      {/* Emotion Analysis Charts */}
+      <ChartWrapper mdCols={2}>
+        {/* Emotion Performance Chart */}
+        <EmotionPerformanceChart emotionData={stats.emotionPerformance} />
+        
+        {/* Emotion Transition Chart */}
+        <EmotionTransitionChart transitionData={stats.emotionTransitions} />
+      </ChartWrapper>
+      
       {/* Alpha Trader Charts */}
       <ChartWrapper mdCols={2}>
         {/* Plan Followed Performance */}
@@ -265,6 +279,24 @@ const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
         
         {/* Conviction Performance Chart */}
         <ConvictionPerformanceChart convictionData={stats.convictionPerformance} />
+      </ChartWrapper>
+      
+      {/* Risk Management Analysis */}
+      <div className="mb-4">
+        <h3 className="text-lg font-medium mb-2">Erweitertes Risikomanagement</h3>
+      </div>
+      
+      <ChartWrapper mdCols={2}>
+        {/* Risk-Reward Comparison */}
+        <RiskRewardComparisonChart comparisonData={stats.riskRewardComparison} />
+        
+        {/* Stop Loss Adherence */}
+        <StopLossAdherenceChart adherenceData={stats.stopLossAdherence} />
+      </ChartWrapper>
+      
+      {/* Drawdown Analysis - Full width for this one */}
+      <ChartWrapper mdCols={1}>
+        <DrawdownAnalysisChart drawdownData={stats.drawdownAnalysis} />
       </ChartWrapper>
       
       {/* Asset Performance Table */}
