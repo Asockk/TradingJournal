@@ -4,13 +4,29 @@ import { getFieldStyle } from '../../utils/formUtils';
 import EmotionSelector from './EmotionSelector';
 import FavoriteButton from '../favorites/FavoriteButton';
 import FavoritesSelector from '../favorites/FavoritesSelector';
+import WinProbabilityInput from './WinProbabilityInput';
+import { predictWinProbability } from '../../utils/winProbabilityPredictor';
 
-const EntryTabContent = ({ currentTrade, handleInputChange, setCurrentTrade }) => {
-  // Favoriten-Handler
+const EntryTabContent = ({ 
+  currentTrade, 
+  handleInputChange, 
+  setCurrentTrade,
+  allTrades = []
+}) => {
+  // Handle favorit selection
   const handleSelectFavorite = (fieldName, value) => {
     setCurrentTrade(prev => ({
       ...prev,
       [fieldName]: value
+    }));
+  };
+
+  // Handle auto-suggest for win probability
+  const handleAutoSuggestWinProbability = () => {
+    const predictedValue = predictWinProbability(allTrades, currentTrade);
+    setCurrentTrade(prev => ({
+      ...prev,
+      winProbability: predictedValue
     }));
   };
 
@@ -315,6 +331,16 @@ const EntryTabContent = ({ currentTrade, handleInputChange, setCurrentTrade }) =
           </div>
         </div>
         
+        {/* Win Probability Input */}
+        <div className="lg:col-span-3">
+          <WinProbabilityInput
+            value={currentTrade.winProbability || 50}
+            onChange={(value) => setCurrentTrade(prev => ({ ...prev, winProbability: value }))}
+            onAutoSuggest={handleAutoSuggestWinProbability}
+            hasHistoricalData={allTrades && allTrades.length >= 10}
+          />
+        </div>
+        
         <div>
           <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
             Risk/Reward bei Entry
@@ -342,6 +368,48 @@ const EntryTabContent = ({ currentTrade, handleInputChange, setCurrentTrade }) =
             value={currentTrade.expectedPnL}
             readOnly
             className={getFieldStyle('expectedPnL', currentTrade, false, true)}
+          />
+        </div>
+        
+        <div>
+          <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+            Erwartungswert (EV)
+            <span className="ml-1 px-1 py-0.5 bg-gray-100 text-gray-500 text-xs rounded">Berechnet</span>
+          </label>
+          <input
+            type="number"
+            name="expectedValue"
+            step="0.01"
+            value={currentTrade.expectedValue}
+            readOnly
+            className={`w-full p-2 border rounded-md ${
+              parseFloat(currentTrade.expectedValue) > 0 
+                ? 'bg-green-50 text-green-700 border-green-300' 
+                : parseFloat(currentTrade.expectedValue) < 0 
+                  ? 'bg-red-50 text-red-700 border-red-300' 
+                  : 'bg-gray-50 border-gray-300'
+            }`}
+          />
+        </div>
+        
+        <div>
+          <label className="flex items-center text-sm font-medium text-gray-700 mb-1">
+            R-Multiple
+            <span className="ml-1 px-1 py-0.5 bg-gray-100 text-gray-500 text-xs rounded">Berechnet</span>
+          </label>
+          <input
+            type="number"
+            name="rMultiple"
+            step="0.01"
+            value={currentTrade.rMultiple}
+            readOnly
+            className={`w-full p-2 border rounded-md ${
+              parseFloat(currentTrade.rMultiple) > 0 
+                ? 'bg-green-50 text-green-700 border-green-300' 
+                : parseFloat(currentTrade.rMultiple) < 0 
+                  ? 'bg-red-50 text-red-700 border-red-300' 
+                  : 'bg-gray-50 border-gray-300'
+            }`}
           />
         </div>
       </div>

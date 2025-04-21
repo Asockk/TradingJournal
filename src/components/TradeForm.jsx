@@ -11,7 +11,7 @@ import AnalysisTabContent from './form/AnalysisTabContent';
 import TemplateSelector from './templates/TemplateSelector';
 import TemplateModal from './templates/TemplateModal';
 
-const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
+const TradeForm = ({ trade, onClose, onSubmit, isEditing, trades = [] }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
   
@@ -132,7 +132,8 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing }) => {
                 <EntryTabContent 
                   currentTrade={currentTrade} 
                   handleInputChange={handleInputChange} 
-                  setCurrentTrade={setCurrentTrade} 
+                  setCurrentTrade={setCurrentTrade}
+                  allTrades={trades} 
                 />
               )}
               {activeTab === 'exit' && (

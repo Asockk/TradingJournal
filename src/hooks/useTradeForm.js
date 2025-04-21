@@ -1,12 +1,22 @@
 // src/hooks/useTradeForm.js
 import { useState, useEffect, useRef } from 'react';
-import { calculateDuration, calculateExpectedPnL, calculateEntryRiskReward, 
-         calculatePnL, calculateActualRiskReward } from '../utils/calculations';
+import { 
+  calculateDuration, 
+  calculateExpectedPnL, 
+  calculateEntryRiskReward, 
+  calculatePnL, 
+  calculateActualRiskReward,
+  calculateExpectedValue,
+  calculateRMultiple
+} from '../utils/calculations';
 
+/**
+ * Custom hook for managing trade form state and calculations
+ */
 export const useTradeForm = (initialTrade, onSubmit, onClose, isEditing) => {
   const [currentTrade, setCurrentTrade] = useState({
     ...initialTrade,
-    // Default-Werte für neue Alpha Trader Felder
+    // Default values for Alpha Trader fields
     tradePlan: initialTrade.tradePlan || '',
     exitCriteria: initialTrade.exitCriteria || '',
     preTradeEmotion: initialTrade.preTradeEmotion || 3,
@@ -16,17 +26,22 @@ export const useTradeForm = (initialTrade, onSubmit, onClose, isEditing) => {
     tradeType: initialTrade.tradeType || 'Other',
     whatWorked: initialTrade.whatWorked || '',
     whatDidntWork: initialTrade.whatDidntWork || '',
-    wouldTakeAgain: initialTrade.wouldTakeAgain !== undefined ? initialTrade.wouldTakeAgain : true
+    wouldTakeAgain: initialTrade.wouldTakeAgain !== undefined ? initialTrade.wouldTakeAgain : true,
+    
+    // Expected Value fields
+    winProbability: initialTrade.winProbability || 50,
+    expectedValue: initialTrade.expectedValue || '',
+    rMultiple: initialTrade.rMultiple || ''
   });
   
-  // State für Tabs und Schnelleingabe-Modus
+  // State for tabs and quick mode
   const [activeTab, setActiveTab] = useState('entry');
   const [isQuickMode, setIsQuickMode] = useState(false);
   
-  // Referenz zum Formular für Keyboard-Fokus
+  // Reference to form for keyboard focus
   const formRef = useRef(null);
   
-  // Form input change handler
+  // Handle input changes
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
     setCurrentTrade(prev => ({ 
@@ -35,40 +50,41 @@ export const useTradeForm = (initialTrade, onSubmit, onClose, isEditing) => {
     }));
   };
   
-  // Form submission handler
+  // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(currentTrade);
   };
   
-  // Speichern und neuen Trade hinzufügen
+  // Save and add new trade
   const handleSaveAndAddNew = (e) => {
     e.preventDefault();
     
-    // Bestehenden Trade speichern
+    // Save existing trade
     onSubmit(currentTrade);
     
-    // Formular zurücksetzen, aber einige Werte beibehalten für bessere UX
+    // Reset form but keep some values for better UX
     setCurrentTrade({
       ...initialTrade,
-      entryDate: new Date().toISOString().split('T')[0], // Heutiges Datum
-      assetClass: currentTrade.assetClass, // Asset-Klasse beibehalten
-      currency: currentTrade.currency, // Währung beibehalten
-      position: currentTrade.position, // Position beibehalten
-      leverage: currentTrade.leverage, // Hebel beibehalten
-      marketCondition: currentTrade.marketCondition, // Marktbedingung beibehalten
-      tradeType: currentTrade.tradeType, // Trade-Typ beibehalten
+      entryDate: new Date().toISOString().split('T')[0], // Today's date
+      assetClass: currentTrade.assetClass, // Keep asset class
+      currency: currentTrade.currency, // Keep currency
+      position: currentTrade.position, // Keep position
+      leverage: currentTrade.leverage, // Keep leverage
+      marketCondition: currentTrade.marketCondition, // Keep market condition
+      tradeType: currentTrade.tradeType, // Keep trade type
       preTradeEmotion: 3, // Neutral
       postTradeEmotion: 3, // Neutral
       followedPlan: true,
-      wouldTakeAgain: true
+      wouldTakeAgain: true,
+      winProbability: 50 // Reset to default
     });
     
-    // Zur Entry-Tab wechseln und ersten Input fokussieren
+    // Switch to entry tab and focus first input
     setActiveTab('entry');
     setIsQuickMode(false);
     
-    // Fokus auf das erste Input-Element setzen (mit Timeout für DOM-Update)
+    // Focus the first input element (with timeout for DOM update)
     setTimeout(() => {
       if (formRef.current) {
         const firstInput = formRef.current.querySelector('input:not([readonly]), select, textarea');
@@ -77,41 +93,40 @@ export const useTradeForm = (initialTrade, onSubmit, onClose, isEditing) => {
     }, 100);
   };
   
-  // Zurück zum vorherigen Feld (für mobile Nutzer)
-  const goToPreviousField = (e) => {
+  // Go to previous field (for mobile users)
+  const goToPreviousField = () => {
     if (!formRef.current) return;
     
-    // Aktuelles fokussiertes Element finden
+    // Find focused element
     const focusedElement = document.activeElement;
     
-    // Alle Input-Elemente im Formular finden
+    // Find all form elements
     const formElements = Array.from(formRef.current.querySelectorAll(
       'input:not([type="hidden"]):not([readonly]), select, textarea'
     ));
     
-    // Index des aktuellen Elements finden
+    // Find index of current element
     const currentIndex = formElements.indexOf(focusedElement);
     
-    // Wenn es ein fokussiertes Element gibt und es nicht das erste ist
+    // Focus previous element if possible
     if (currentIndex > 0) {
-      // Vorheriges Element fokussieren
       formElements[currentIndex - 1].focus();
     }
   };
   
-  // Tastaturkürzel-Handler
+  // Keyboard shortcut handler
   const handleKeyboardShortcuts = (e) => {
-    // Strg+Enter für Speichern
-    if (e.ctrlKey && e.key === 'Enter') {
+    // Ctrl+Enter to save
+    if (e.ctrlKey && e.key === 'Enter' && !e.shiftKey) {
       handleSubmit(e);
     }
     
-    // Strg+Shift+Enter für Speichern und Neuen Trade
+    // Ctrl+Shift+Enter to save and add new
     if (e.ctrlKey && e.shiftKey && e.key === 'Enter') {
       handleSaveAndAddNew(e);
     }
     
-    // Tab-Navigation zwischen Tabs mit Strg+Pfeiltasten
+    // Tab navigation with Ctrl+arrows
     if (e.ctrlKey) {
       if (e.key === 'ArrowRight') {
         e.preventDefault();
@@ -125,7 +140,7 @@ export const useTradeForm = (initialTrade, onSubmit, onClose, isEditing) => {
     }
   };
   
-  // Keyboard-Event-Listener hinzufügen/entfernen
+  // Add/remove keyboard event listeners
   useEffect(() => {
     window.addEventListener('keydown', handleKeyboardShortcuts);
     return () => {
@@ -133,39 +148,54 @@ export const useTradeForm = (initialTrade, onSubmit, onClose, isEditing) => {
     };
   }, [activeTab]);
 
-  // Calculated fields
+  // Calculate derived values when relevant inputs change
   useEffect(() => {
     const newTrade = { ...currentTrade };
+    let hasChanges = false;
     
-    // Calculate duration if we have both entry and exit dates
+    // Calculate duration if we have both dates
     if (currentTrade.entryDate && currentTrade.exitDate) {
-      newTrade.duration = calculateDuration(currentTrade.entryDate, currentTrade.exitDate);
+      const duration = calculateDuration(currentTrade.entryDate, currentTrade.exitDate);
+      if (newTrade.duration !== duration) {
+        newTrade.duration = duration;
+        hasChanges = true;
+      }
     }
     
     // Calculate expected PnL
     if (currentTrade.entryPrice && currentTrade.takeProfit && currentTrade.positionSize) {
-      newTrade.expectedPnL = calculateExpectedPnL(
+      const expectedPnL = calculateExpectedPnL(
         currentTrade.entryPrice,
         currentTrade.takeProfit,
         currentTrade.positionSize,
         currentTrade.position,
         currentTrade.leverage
       );
+      
+      if (newTrade.expectedPnL !== expectedPnL) {
+        newTrade.expectedPnL = expectedPnL;
+        hasChanges = true;
+      }
     }
     
     // Calculate entry risk/reward ratio
     if (currentTrade.entryPrice && currentTrade.takeProfit && currentTrade.stopLoss) {
-      newTrade.entryRiskReward = calculateEntryRiskReward(
+      const entryRiskReward = calculateEntryRiskReward(
         currentTrade.entryPrice,
         currentTrade.takeProfit,
         currentTrade.stopLoss,
         currentTrade.position
       );
+      
+      if (newTrade.entryRiskReward !== entryRiskReward) {
+        newTrade.entryRiskReward = entryRiskReward;
+        hasChanges = true;
+      }
     }
     
     // Calculate actual PnL
     if (currentTrade.entryPrice && currentTrade.exitPrice && currentTrade.positionSize) {
-      newTrade.pnl = calculatePnL(
+      const pnl = calculatePnL(
         currentTrade.entryPrice,
         currentTrade.exitPrice,
         currentTrade.positionSize,
@@ -173,12 +203,17 @@ export const useTradeForm = (initialTrade, onSubmit, onClose, isEditing) => {
         currentTrade.leverage,
         currentTrade.fees
       );
+      
+      if (newTrade.pnl !== pnl) {
+        newTrade.pnl = pnl;
+        hasChanges = true;
+      }
     }
     
     // Calculate actual risk/reward ratio
     if (currentTrade.pnl && currentTrade.entryPrice && currentTrade.stopLoss && 
         currentTrade.positionSize && currentTrade.leverage) {
-      newTrade.actualRiskReward = calculateActualRiskReward(
+      const actualRiskReward = calculateActualRiskReward(
         currentTrade.entryPrice,
         currentTrade.stopLoss,
         currentTrade.pnl,
@@ -186,9 +221,50 @@ export const useTradeForm = (initialTrade, onSubmit, onClose, isEditing) => {
         currentTrade.position,
         currentTrade.leverage
       );
+      
+      if (newTrade.actualRiskReward !== actualRiskReward) {
+        newTrade.actualRiskReward = actualRiskReward;
+        hasChanges = true;
+      }
     }
     
-    if (JSON.stringify(currentTrade) !== JSON.stringify(newTrade)) {
+    // Calculate expected value
+    if (currentTrade.entryPrice && currentTrade.takeProfit && 
+        currentTrade.stopLoss && currentTrade.positionSize) {
+      
+      const winProb = currentTrade.winProbability || 50;
+      
+      const expectedValue = calculateExpectedValue(
+        currentTrade.entryPrice,
+        currentTrade.takeProfit,
+        currentTrade.stopLoss,
+        currentTrade.positionSize,
+        currentTrade.position,
+        currentTrade.leverage,
+        winProb
+      );
+      
+      if (newTrade.expectedValue !== expectedValue) {
+        newTrade.expectedValue = expectedValue;
+        hasChanges = true;
+      }
+      
+      // Calculate R-Multiple if entryRiskReward is available
+      if (currentTrade.entryRiskReward) {
+        const rMultiple = calculateRMultiple(
+          currentTrade.entryRiskReward,
+          winProb
+        );
+        
+        if (newTrade.rMultiple !== rMultiple) {
+          newTrade.rMultiple = rMultiple;
+          hasChanges = true;
+        }
+      }
+    }
+    
+    // Update state if changes were made
+    if (hasChanges) {
       setCurrentTrade(newTrade);
     }
   }, [
@@ -201,7 +277,9 @@ export const useTradeForm = (initialTrade, onSubmit, onClose, isEditing) => {
     currentTrade.exitPrice,
     currentTrade.fees,
     currentTrade.position,
-    currentTrade.leverage
+    currentTrade.leverage,
+    currentTrade.winProbability,
+    currentTrade.entryRiskReward
   ]);
 
   return {

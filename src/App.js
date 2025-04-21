@@ -195,6 +195,7 @@ const App = () => {
                 onClose={() => setIsFormOpen(false)}
                 onSubmit={handleSubmit}
                 isEditing={!!editingId}
+                trades={trades}
               />
             )}
             

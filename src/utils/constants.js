@@ -38,7 +38,12 @@ export const initialTradeState = {
   tradeType: 'Other',
   whatWorked: '',
   whatDidntWork: '',
-  wouldTakeAgain: true
+  wouldTakeAgain: true,
+  
+  // Expected Value Ergänzungen
+  winProbability: 50,
+  expectedValue: '',
+  rMultiple: ''
 };
 
 /**

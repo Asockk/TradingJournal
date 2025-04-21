@@ -19,6 +19,8 @@ import RiskRewardComparisonChart from './charts/RiskRewardComparisonChart';
 import StopLossAdherenceChart from './charts/StopLossAdherenceChart';
 import DrawdownAnalysisChart from './charts/DrawdownAnalysisChart';
 import PositionSizeOptimizationPanel from './stats/PositionSizeOptimizationPanel';
+import ExpectedValuePerformanceChart from './charts/ExpectedValuePerformanceChart';
+import { calculateExpectedValuePerformance, calculateRMultiplePerformance } from '../utils/expectedValueStats';
 import { calculateStats } from '../utils/statsCalculations';
 import { ArrowLeft } from 'lucide-react';
 
@@ -148,6 +150,17 @@ const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
     return calculatedStats;
   }, [timeFilteredTrades]);
 
+  // Expected Value Analyse
+  const evStats = React.useMemo(() => {
+    if (!timeFilteredTrades.length) return null;
+    return calculateExpectedValuePerformance(timeFilteredTrades);
+  }, [timeFilteredTrades]);
+
+  const rMultipleStats = React.useMemo(() => {
+    if (!timeFilteredTrades.length) return null;
+    return calculateRMultiplePerformance(timeFilteredTrades);
+  }, [timeFilteredTrades]);
+
   // Calculate previous period stats for comparison
   useEffect(() => {
     if (timeRange === 'all' || !filteredTrades.length) {
@@ -271,6 +284,70 @@ const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
         {/* Asset Performance */}
         <AssetPerformanceChart data={safeStats.assetPnL.slice(0, 10)} />
       </ChartWrapper>
+
+      {/* Expected Value Analyse */}
+      <div className="mb-4">
+        <h3 className="text-lg font-medium mb-2">Erwartungswert-Analyse</h3>
+      </div>
+      
+      <ChartWrapper mdCols={2}>
+        {/* Expected Value Performance Chart */}
+        <ExpectedValuePerformanceChart evData={evStats} />
+        
+        {/* R-Multiple Übersicht */}
+        <Card className="bg-white">
+          <CardContent className="p-4">
+            <h3 className="text-base font-medium mb-2">R-Multiple Performance</h3>
+            
+            {rMultipleStats && rMultipleStats.rRanges.length > 0 ? (
+              <>
+                <table className="min-w-full divide-y divide-gray-200 mt-2">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-gray-500">R-Bereich</th>
+                      <th className="px-3 py-2 text-center text-xs font-medium text-gray-500">Trades</th>
+                      <th className="px-3 py-2 text-center text-xs font-medium text-gray-500">Winrate</th>
+                      <th className="px-3 py-2 text-right text-xs font-medium text-gray-500">Ø PnL</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {rMultipleStats.rRanges.map((range, idx) => (
+                      <tr key={idx} className={idx % 2 === 0 ? 'bg-gray-50' : ''}>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm">{range.range}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-center">{range.count}</td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-center">{range.winRate.toFixed(1)}%</td>
+                        <td className={`px-3 py-2 whitespace-nowrap text-sm text-right font-medium ${
+                          range.avgPnL > 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {range.avgPnL.toFixed(2)}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                
+                <div className="mt-4 p-3 bg-blue-50 text-blue-800 rounded-md">
+                  <p className="text-sm">
+                    <strong>Durchschnittliches R-Multiple:</strong> {rMultipleStats.averageRMultiple.toFixed(2)}
+                    {rMultipleStats.averageRMultiple > 0 
+                      ? ' (positiv: Strategiemix ist profitabel)' 
+                      : ' (negativ: Strategiemix ist nicht profitabel)'}
+                  </p>
+                  {rMultipleStats.bestPerformingRRange && (
+                    <p className="text-sm mt-1">
+                      <strong>Beste Performance:</strong> Trades mit {rMultipleStats.bestPerformingRRange} R-Multiple
+                    </p>
+                  )}
+                </div>
+              </>
+            ) : (
+              <div className="h-64 flex items-center justify-center">
+                <p className="text-gray-500">Keine R-Multiple Daten verfügbar</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </ChartWrapper>
       
       {/* Emotion Analysis Charts */}
       <ChartWrapper mdCols={2}>
@@ -329,14 +406,7 @@ const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
         <DrawdownAnalysisChart drawdownData={safeStats.drawdownAnalysis} />
       </ChartWrapper>
       
-      {/* POSITIONS-GRÖSSEN OPTIMIERUNG - IMMER ANZEIGEN */}
-      <div className="bg-white p-4 rounded-lg shadow border border-gray-200 mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Positionsgrößen-Optimierung</h2>
-        <p className="text-gray-600 text-sm mt-1">
-          Analyse der optimalen Handelsgröße basierend auf historischen Ergebnissen
-        </p>
-      </div>
-      
+      {/* POSITIONS-GRÖSSEN OPTIMIERUNG*/}      
       <ChartWrapper mdCols={1}>
         <PositionSizeOptimizationPanel trades={timeFilteredTrades} />
       </ChartWrapper>
