@@ -1,4 +1,6 @@
+// src/components/StatisticsPanel.jsx
 import React, { useState, useEffect } from 'react';
+import { Card, CardContent } from './ui/card';
 import StatisticsCards from './stats/StatisticsCards';
 import AlphaTraderCards from './stats/AlphaTraderCards';
 import EquityChart from './charts/EquityChart';
@@ -10,17 +12,92 @@ import WeekdayPerformanceChart from './charts/WeekdayPerformanceChart';
 import PlanFollowedChart from './charts/PlanFollowedChart';
 import TradeTypePerformanceChart from './charts/TradeTypePerformanceChart';
 import DurationPerformanceChart from './charts/DurationPerformanceChart';
-import PeriodComparisonCard from './stats/PeriodComparisonCard';
 import EmotionPerformanceChart from './charts/EmotionPerformanceChart';
 import EmotionTransitionChart from './charts/EmotionTransitionChart';
+import PeriodComparisonCard from './stats/PeriodComparisonCard';
+import RiskRewardComparisonChart from './charts/RiskRewardComparisonChart';
+import StopLossAdherenceChart from './charts/StopLossAdherenceChart';
+import DrawdownAnalysisChart from './charts/DrawdownAnalysisChart';
+import PositionSizeOptimizationPanel from './stats/PositionSizeOptimizationPanel';
 import { calculateStats } from '../utils/statsCalculations';
 import { ArrowLeft } from 'lucide-react';
 
+// Komponente für Zeitbereichsauswahl
+const TimeRangeSelector = ({ timeRange, setTimeRange }) => (
+  <div className="flex justify-end mb-4">
+    <div className="inline-flex rounded-md shadow-sm">
+      {['7d', '30d', '90d', 'ytd', 'all'].map((range) => {
+        const labels = {
+          '7d': '7 Tage',
+          '30d': '30 Tage',
+          '90d': '90 Tage',
+          'ytd': 'YTD',
+          'all': 'Alle'
+        };
+        
+        // Bestimme Klassen basierend auf Auswahl
+        const isActive = timeRange === range;
+        const baseClasses = `px-4 py-2 text-sm font-medium border`;
+        const activeClasses = isActive 
+          ? 'bg-blue-600 text-white'
+          : 'bg-white text-gray-700 hover:bg-gray-50';
+        
+        // Bestimme Rand-Klassen
+        const borderClasses = 
+          range === '7d' ? 'rounded-l-md border-gray-300' :
+          range === 'all' ? 'rounded-r-md border-t border-b border-r border-gray-300' :
+          'border-t border-b border-r border-gray-300';
+        
+        return (
+          <button
+            key={range}
+            onClick={() => setTimeRange(range)}
+            className={`${baseClasses} ${activeClasses} ${borderClasses}`}
+          >
+            {labels[range]}
+          </button>
+        );
+      })}
+    </div>
+  </div>
+);
+
+// Komponente für Keine-Daten-Anzeige
+const NoDataView = ({ onReset }) => (
+  <Card className="bg-white p-8 text-center text-gray-500 rounded-lg shadow">
+    <CardContent>
+      <p className="mb-4">Keine Daten für den gewählten Zeitraum verfügbar.</p>
+      <button 
+        onClick={onReset}
+        className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center mx-auto"
+      >
+        <ArrowLeft size={16} className="mr-2" />
+        Alle Daten anzeigen
+      </button>
+    </CardContent>
+  </Card>
+);
+
+// Wrapper für Chart-Komponenten mit einheitlichem Layout
+const ChartWrapper = ({ children, mdCols = 1 }) => (
+  <div className={`grid grid-cols-1 ${mdCols > 1 ? 'md:grid-cols-2' : ''} gap-6 mb-6`}>
+    {children}
+  </div>
+);
+
 const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
+  console.log("StatisticsPanel wird gerendert - KORRIGIERTE VERSION");
+  
   // Zeitraum-Auswahl (Standard: "All")
   const [timeRange, setTimeRange] = useState('all');
   const [prevStats, setPrevStats] = useState(null);
   const [hasNoData, setHasNoData] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  
+  // Debug-Logging für Zeitraum-Änderungen
+  useEffect(() => {
+    console.log("Zeitraum geändert:", timeRange);
+  }, [timeRange]);
   
   // Berechne gefilterte Trades basierend auf Zeitraum
   const timeFilteredTrades = React.useMemo(() => {
@@ -56,12 +133,19 @@ const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
 
   // Calculate statistics
   const stats = React.useMemo(() => {
+    setIsLoading(true);
+    
     if (!timeFilteredTrades.length) {
       setHasNoData(true);
+      setIsLoading(false);
       return null;
     }
+    
     setHasNoData(false);
-    return calculateStats(timeFilteredTrades);
+    const calculatedStats = calculateStats(timeFilteredTrades);
+    setIsLoading(false);
+    console.log("Berechnete Statistiken:", calculatedStats ? "Verfügbar" : "Nicht verfügbar");
+    return calculatedStats;
   }, [timeFilteredTrades]);
 
   // Calculate previous period stats for comparison
@@ -124,153 +208,150 @@ const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
     }
   }, [timeRange, filteredTrades]);
 
-  if (!stats && !hasNoData) {
+  if (isLoading) {
     return (
-      <div className="bg-white p-8 text-center text-gray-500 rounded-lg shadow">
-        <p className="text-xl">Berechne Statistiken...</p>
-      </div>
+      <Card className="bg-white p-8 text-center text-gray-500 rounded-lg shadow">
+        <CardContent>
+          <p className="text-xl">Berechne Statistiken...</p>
+        </CardContent>
+      </Card>
     );
   }
 
   if (!stats && hasNoData) {
-    return (
-      <div className="bg-white p-8 text-center text-gray-500 rounded-lg shadow">
-        <p className="mb-4">Keine Daten für den gewählten Zeitraum verfügbar.</p>
-        <button 
-          onClick={() => setTimeRange('all')}
-          className="px-4 py-2 bg-blue-600 text-white rounded-md flex items-center mx-auto"
-        >
-          <ArrowLeft size={16} className="mr-2" />
-          Alle Daten anzeigen
-        </button>
-      </div>
-    );
+    return <NoDataView onReset={() => setTimeRange('all')} />;
   }
+
+  // Gemeinsame Währungs-Eigenschaft, die wir überall verwenden
+  const currency = timeFilteredTrades[0]?.currency || '€';
+
+  // Stelle sicher, dass wir immer ein stats-Objekt haben
+  const safeStats = stats || {
+    cumulativePnL: [],
+    assetPnL: [],
+    emotionPerformance: [],
+    emotionTransitions: {},
+    planStats: {},
+    tradeTypeStats: [],
+    weekdayStats: {},
+    durationStats: {},
+    hourlyPerformance: [],
+    convictionPerformance: [],
+    riskRewardComparison: { distribution: [] },
+    stopLossAdherence: { data: [] },
+    drawdownAnalysis: { equityCurve: [] }
+  };
 
   return (
     <>
       {/* Zeitraum-Auswahl */}
-      <div className="flex justify-end mb-4">
-        <div className="inline-flex rounded-md shadow-sm">
-          <button
-            onClick={() => setTimeRange('7d')}
-            className={`px-4 py-2 text-sm font-medium ${
-              timeRange === '7d' 
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-            } border border-gray-300 rounded-l-md`}
-          >
-            7 Tage
-          </button>
-          <button
-            onClick={() => setTimeRange('30d')}
-            className={`px-4 py-2 text-sm font-medium ${
-              timeRange === '30d' 
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-            } border-t border-b border-r border-gray-300`}
-          >
-            30 Tage
-          </button>
-          <button
-            onClick={() => setTimeRange('90d')}
-            className={`px-4 py-2 text-sm font-medium ${
-              timeRange === '90d' 
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-            } border-t border-b border-r border-gray-300`}
-          >
-            90 Tage
-          </button>
-          <button
-            onClick={() => setTimeRange('ytd')}
-            className={`px-4 py-2 text-sm font-medium ${
-              timeRange === 'ytd' 
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-            } border-t border-b border-r border-gray-300`}
-          >
-            YTD
-          </button>
-          <button
-            onClick={() => setTimeRange('all')}
-            className={`px-4 py-2 text-sm font-medium ${
-              timeRange === 'all' 
-                ? 'bg-blue-600 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-50'
-            } border-t border-b border-r border-gray-300 rounded-r-md`}
-          >
-            Alle
-          </button>
-        </div>
-      </div>
+      <TimeRangeSelector timeRange={timeRange} setTimeRange={setTimeRange} />
       
       {/* KPI Cards */}
-      <StatisticsCards stats={stats} currency={timeFilteredTrades[0]?.currency || '€'} />
+      <StatisticsCards stats={safeStats} currency={currency} />
       
       {/* Period Comparison (neu) */}
       {prevStats && timeRange !== 'all' && (
         <PeriodComparisonCard 
-          currentStats={stats} 
+          currentStats={safeStats} 
           prevStats={prevStats} 
           timeRange={timeRange} 
-          currency={timeFilteredTrades[0]?.currency || '€'} 
+          currency={currency} 
         />
       )}
       
       {/* Alpha Trader Cards */}
-      <AlphaTraderCards stats={stats} currency={timeFilteredTrades[0]?.currency || '€'} />
+      <AlphaTraderCards stats={safeStats} currency={currency} />
       
       {/* Charts and Detailed Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <ChartWrapper mdCols={2}>
         {/* Equity Curve */}
-        <EquityChart data={stats.cumulativePnL} />
+        <EquityChart data={safeStats.cumulativePnL} />
         
         {/* Asset Performance */}
-        <AssetPerformanceChart data={stats.assetPnL.slice(0, 10)} />
-      </div>
+        <AssetPerformanceChart data={safeStats.assetPnL.slice(0, 10)} />
+      </ChartWrapper>
       
       {/* Emotion Analysis Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <ChartWrapper mdCols={2}>
         {/* Emotion Performance Chart */}
-        <EmotionPerformanceChart emotionData={stats.emotionPerformance} />
+        <EmotionPerformanceChart emotionData={safeStats.emotionPerformance} />
         
         {/* Emotion Transition Chart */}
-        <EmotionTransitionChart transitionData={stats.emotionTransitions} />
-      </div>
+        <EmotionTransitionChart transitionData={safeStats.emotionTransitions} />
+      </ChartWrapper>
       
       {/* Alpha Trader Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <ChartWrapper mdCols={2}>
         {/* Plan Followed Performance */}
-        <PlanFollowedChart planStats={stats.planStats} />
+        <PlanFollowedChart planStats={safeStats.planStats} />
         
         {/* Trade Type Performance */}
-        <TradeTypePerformanceChart tradeTypeStats={stats.tradeTypeStats} />
-      </div>
+        <TradeTypePerformanceChart tradeTypeStats={safeStats.tradeTypeStats} />
+      </ChartWrapper>
       
       {/* More Alpha Trader Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <ChartWrapper mdCols={2}>
         {/* Weekday Performance Chart */}
-        <WeekdayPerformanceChart weekdayStats={stats.weekdayStats} />
+        <WeekdayPerformanceChart weekdayStats={safeStats.weekdayStats} />
         
         {/* Duration Performance Chart */}
-        <DurationPerformanceChart durationStats={stats.durationStats} />
-      </div>
+        <DurationPerformanceChart durationStats={safeStats.durationStats} />
+      </ChartWrapper>
       
       {/* Statistics Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <ChartWrapper mdCols={2}>
         {/* Hourly Performance Heatmap */}
-        <HourlyPerformanceHeatmap hourlyData={stats.hourlyPerformance} />
+        <HourlyPerformanceHeatmap hourlyData={safeStats.hourlyPerformance} />
         
         {/* Conviction Performance Chart */}
-        <ConvictionPerformanceChart convictionData={stats.convictionPerformance} />
+        <ConvictionPerformanceChart convictionData={safeStats.convictionPerformance} />
+      </ChartWrapper>
+      
+      {/* RISK MANAGEMENT - IMMER ANZEIGEN */}
+      <div className="bg-white p-4 rounded-lg shadow border border-gray-200 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900">Erweitertes Risikomanagement</h2>
+        <p className="text-gray-600 text-sm mt-1">
+          Analyse Ihrer Risk-Reward Verhältnisse, Stop-Loss Einhaltung und Drawdowns
+        </p>
       </div>
       
-      {/* Asset Performance Table */}
+      <ChartWrapper mdCols={2}>
+        {/* Risk-Reward Comparison */}
+        <RiskRewardComparisonChart comparisonData={safeStats.riskRewardComparison} />
+        
+        {/* Stop Loss Adherence */}
+        <StopLossAdherenceChart adherenceData={safeStats.stopLossAdherence} />
+      </ChartWrapper>
+      
+      {/* Drawdown Analysis - Full width for this one */}
+      <ChartWrapper mdCols={1}>
+        <DrawdownAnalysisChart drawdownData={safeStats.drawdownAnalysis} />
+      </ChartWrapper>
+      
+      {/* POSITIONS-GRÖSSEN OPTIMIERUNG - IMMER ANZEIGEN */}
+      <div className="bg-white p-4 rounded-lg shadow border border-gray-200 mb-6">
+        <h2 className="text-lg font-semibold text-gray-900">Positionsgrößen-Optimierung</h2>
+        <p className="text-gray-600 text-sm mt-1">
+          Analyse der optimalen Handelsgröße basierend auf historischen Ergebnissen
+        </p>
+      </div>
+      
+      <ChartWrapper mdCols={1}>
+        <PositionSizeOptimizationPanel trades={timeFilteredTrades} />
+      </ChartWrapper>
+      
+      {/* Asset Performance Table - IMMER ANZEIGEN */}
       <AssetPerformanceTable 
-        assetData={stats.assetPnL} 
-        currency={timeFilteredTrades[0]?.currency || '€'} 
+        assetData={safeStats.assetPnL} 
+        currency={currency} 
       />
+      
+      {/* DEBUG-INFORMATION */}
+      <div className="mt-8 p-4 bg-gray-100 rounded-lg text-xs text-gray-500">
+        <p>Debug: Anzeige-Version 1.0 | Zeitraum: {timeRange} | Trades: {timeFilteredTrades.length}</p>
+        <p>Stats berechnet: {stats ? "Ja" : "Nein"} | Komponenten: Mit unbedingtem Rendering</p>
+      </div>
     </>
   );
 };

@@ -1,8 +1,10 @@
+// src/components/stats/PositionSizeOptimizationPanel.jsx
 import React from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, ScatterChart, Scatter, ZAxis, Legend, Cell } from 'recharts';
 import { Card, CardContent } from '../ui/card';
 
 const PositionSizeOptimizationPanel = ({ trades }) => {
+  // Simplified check - will show empty analysis instead of returning null
   if (!trades || trades.length === 0) {
     return (
       <Card>
@@ -19,14 +21,20 @@ const PositionSizeOptimizationPanel = ({ trades }) => {
   // Calculate optimization data
   const optimizationData = calculatePositionSizeOptimization(trades);
   
-  if (optimizationData.sizeRanges.length === 0) {
+  // Show a more detailed message instead of returning null
+  if (!optimizationData || !optimizationData.sizeRanges || optimizationData.sizeRanges.length === 0) {
     return (
       <Card>
         <CardContent className="p-4">
           <h3 className="text-xl font-medium mb-4">Positionsgrößen-Optimierung</h3>
-          <p className="text-gray-500 text-center py-8">
-            Nicht genügend Daten für eine aussagekräftige Analyse.
-          </p>
+          <div className="p-4 border border-yellow-300 bg-yellow-50 rounded-md">
+            <p className="text-yellow-800">
+              Nicht genügend Daten für eine aussagekräftige Analyse. Für diese Analyse werden Trades mit gültigen positionSize und pnl-Werten benötigt.
+            </p>
+            <p className="mt-2 text-yellow-800">
+              Stellen Sie sicher, dass Ihre Trades diese Daten enthalten und versuchen Sie es erneut.
+            </p>
+          </div>
         </CardContent>
       </Card>
     );
@@ -62,111 +70,116 @@ const PositionSizeOptimizationPanel = ({ trades }) => {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          {/* Performance by Position Size Chart */}
-          <div>
-            <h4 className="text-lg font-medium mb-2">Performance nach Positionsgröße</h4>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={optimizationData.sizeRanges}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis 
-                    dataKey="range" 
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                    interval={0}
-                  />
-                  <YAxis yAxisId="left" />
-                  <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => `${value}%`} />
-                  <Tooltip 
-                    formatter={(value, name) => {
-                      if (name === 'avgPnL') return [`${value.toFixed(2)} ${currency}`, 'Durchsch. PnL'];
-                      if (name === 'winRate') return [`${value.toFixed(1)}%`, 'Winrate'];
-                      return [value, name];
-                    }}
-                  />
-                  <Legend />
-                  <Bar 
-                    dataKey="avgPnL" 
-                    name="Durchschnittlicher PnL" 
-                    yAxisId="left"
-                    fill="#3b82f6" 
+        {/* Only render charts if we have data */}
+        {optimizationData.sizeRanges && optimizationData.sizeRanges.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Performance by Position Size Chart */}
+            <div>
+              <h4 className="text-lg font-medium mb-2">Performance nach Positionsgröße</h4>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    data={optimizationData.sizeRanges}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
                   >
-                    {optimizationData.sizeRanges.map((entry, index) => (
-                      <Cell 
-                        key={`cell-${index}`} 
-                        fill={entry.avgPnL >= 0 ? '#10b981' : '#ef4444'}
-                      />
-                    ))}
-                  </Bar>
-                  <Bar 
-                    dataKey="winRate" 
-                    name="Winrate" 
-                    yAxisId="right"
-                    fill="#6366f1"
-                    fillOpacity={0.6}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis 
+                      dataKey="range" 
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                      interval={0}
+                    />
+                    <YAxis yAxisId="left" />
+                    <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => `${value}%`} />
+                    <Tooltip 
+                      formatter={(value, name) => {
+                        if (name === 'avgPnL') return [`${value.toFixed(2)} ${currency}`, 'Durchsch. PnL'];
+                        if (name === 'winRate') return [`${value.toFixed(1)}%`, 'Winrate'];
+                        return [value, name];
+                      }}
+                    />
+                    <Legend />
+                    <Bar 
+                      dataKey="avgPnL" 
+                      name="Durchschnittlicher PnL" 
+                      yAxisId="left"
+                      fill="#3b82f6" 
+                    >
+                      {optimizationData.sizeRanges.map((entry, index) => (
+                        <Cell 
+                          key={`cell-${index}`} 
+                          fill={entry.avgPnL >= 0 ? '#10b981' : '#ef4444'}
+                        />
+                      ))}
+                    </Bar>
+                    <Bar 
+                      dataKey="winRate" 
+                      name="Winrate" 
+                      yAxisId="right"
+                      fill="#6366f1"
+                      fillOpacity={0.6}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            
+            {/* Risk-Adjusted Return Chart */}
+            <div>
+              <h4 className="text-lg font-medium mb-2">Risikoadjustierte Rendite</h4>
+              <div className="h-72">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart
+                    data={optimizationData.sizeRanges}
+                    margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                    <XAxis 
+                      dataKey="range" 
+                      angle={-45}
+                      textAnchor="end"
+                      height={80}
+                      interval={0}
+                    />
+                    <YAxis />
+                    <Tooltip 
+                      formatter={(value, name) => {
+                        if (name === 'riskAdjustedReturn') return [value.toFixed(2), 'Risikoadjustierte Rendite'];
+                        if (name === 'stdDev') return [value.toFixed(2), 'Standardabweichung'];
+                        return [value, name];
+                      }}
+                    />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="riskAdjustedReturn" 
+                      name="Risikoadjustierte Rendite" 
+                      stroke="#3b82f6" 
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      activeDot={{ r: 6 }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="stdDev" 
+                      name="Standardabweichung" 
+                      stroke="#f97316" 
+                      strokeWidth={2}
+                      dot={{ r: 4 }}
+                      strokeDasharray="5 5"
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
-          
-          {/* Risk-Adjusted Return Chart */}
-          <div>
-            <h4 className="text-lg font-medium mb-2">Risikoadjustierte Rendite</h4>
-            <div className="h-72">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={optimizationData.sizeRanges}
-                  margin={{ top: 20, right: 30, left: 20, bottom: 60 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
-                  <XAxis 
-                    dataKey="range" 
-                    angle={-45}
-                    textAnchor="end"
-                    height={80}
-                    interval={0}
-                  />
-                  <YAxis />
-                  <Tooltip 
-                    formatter={(value, name) => {
-                      if (name === 'riskAdjustedReturn') return [value.toFixed(2), 'Risikoadjustierte Rendite'];
-                      if (name === 'stdDev') return [value.toFixed(2), 'Standardabweichung'];
-                      return [value, name];
-                    }}
-                  />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="riskAdjustedReturn" 
-                    name="Risikoadjustierte Rendite" 
-                    stroke="#3b82f6" 
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                    activeDot={{ r: 6 }}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="stdDev" 
-                    name="Standardabweichung" 
-                    stroke="#f97316" 
-                    strokeWidth={2}
-                    dot={{ r: 4 }}
-                    strokeDasharray="5 5"
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-        </div>
+        )}
         
-        {/* Emotion Correlation Chart */}
-        {optimizationData.emotionCorrelation.emotionBySize.length > 0 && (
+        {/* Emotion Correlation Chart - only render if data exists */}
+        {optimizationData.emotionCorrelation && 
+         optimizationData.emotionCorrelation.emotionBySize && 
+         optimizationData.emotionCorrelation.emotionBySize.length > 0 && (
           <div className="mb-6">
             <h4 className="text-lg font-medium mb-2">Emotionaler Zustand & Positionsgröße</h4>
             <div className="h-64">
@@ -206,27 +219,27 @@ const PositionSizeOptimizationPanel = ({ trades }) => {
               </ResponsiveContainer>
             </div>
             <p className="text-sm text-gray-600 mt-2">
-              Korrelation: {(optimizationData.emotionCorrelation.correlation * 100).toFixed(0)}% 
-              {Math.abs(optimizationData.emotionCorrelation.correlation) > 0.3 
+              Korrelation: {((optimizationData.emotionCorrelation.correlation || 0) * 100).toFixed(0)}% 
+              {Math.abs(optimizationData.emotionCorrelation.correlation || 0) > 0.3 
                 ? ` - Es besteht ein ${optimizationData.emotionCorrelation.correlation > 0 ? 'positiver' : 'negativer'} Zusammenhang zwischen emotionalem Zustand und Positionsgröße.`
                 : ' - Kein deutlicher Zusammenhang zwischen emotionalem Zustand und Positionsgröße erkennbar.'}
             </p>
           </div>
         )}
         
-        {/* Insights & Recommendations */}
+        {/* Insights & Recommendations - always show this section */}
         <div className="bg-gray-50 p-4 rounded-md">
           <h4 className="font-medium mb-2">Erkenntnisse & Empfehlungen</h4>
-          <p className="mb-2">{optimizationData.summary}</p>
+          <p className="mb-2">{optimizationData.summary || "Nicht genügend Daten für eine aussagekräftige Analyse."}</p>
           <ul className="list-disc pl-5 text-sm text-gray-600 space-y-1">
             <li>
               <strong>Kelly-Kriterium:</strong> Basierend auf deiner Winrate und Risk/Reward-Verhältnis 
-              solltest du pro Trade etwa {calculateKellyCriterion(optimizationData.optimalSize?.winRate)}% deines Kapitals riskieren.
+              solltest du pro Trade etwa {calculateKellyCriterion(optimizationData.optimalSize?.winRate || 50)}% deines Kapitals riskieren.
             </li>
             <li>
               <strong>Position Size vs. Emotionen:</strong> {
-                Math.abs(optimizationData.emotionCorrelation.correlation) > 0.3
-                  ? `Achte darauf, dass deine Emotionen die Positionsgröße beeinflussen. Du tendierst dazu, in ${optimizationData.emotionCorrelation.emotionTrend} Zuständen größere Positionen einzugehen.`
+                optimizationData.emotionCorrelation && Math.abs(optimizationData.emotionCorrelation.correlation || 0) > 0.3
+                  ? `Achte darauf, dass deine Emotionen die Positionsgröße beeinflussen. Du tendierst dazu, in ${optimizationData.emotionCorrelation.emotionTrend || 'bestimmten'} Zuständen größere Positionen einzugehen.`
                   : 'Deine Positionsgrößen scheinen nicht stark von deinem emotionalen Zustand beeinflusst zu sein, was positiv ist.'
               }
             </li>
@@ -282,7 +295,7 @@ export const calculatePositionSizeOptimization = (trades) => {
   if (validTrades.length === 0) {
     return {
       sizeRanges: [],
-      emotionCorrelation: [],
+      emotionCorrelation: { emotionBySize: [] },
       optimalSize: null,
       summary: "Not enough data for position size analysis."
     };

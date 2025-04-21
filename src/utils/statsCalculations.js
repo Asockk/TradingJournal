@@ -7,7 +7,7 @@ import {
   calculateRiskRewardComparison, 
   calculateStopLossAdherence, 
   calculateDrawdownAnalysis 
-} from './riskStatsUtils';
+} from './riskAnalysisUtils';
 
 /**
  * Calculate comprehensive statistics based on filtered trades
