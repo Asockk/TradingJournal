@@ -64,7 +64,7 @@ const RiskRewardComparisonChart = ({ comparisonData }) => {
               <YAxis yAxisId="right" orientation="right" tickFormatter={(value) => `${value}%`} />
               <Tooltip content={<CustomTooltip />} />
               <Legend />
-              <ReferenceLine y={0} stroke="#000" />
+              <ReferenceLine y={0} stroke="#000" yAxisId="left" />
               <Bar 
                 dataKey="averageDifference" 
                 name="R:R Differenz" 

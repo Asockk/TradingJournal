@@ -142,7 +142,7 @@ const PositionSizeOptimizationPanel = ({ trades }) => {
                       height={80}
                       interval={0}
                     />
-                    <YAxis />
+                    <YAxis yAxisId="left" />
                     <Tooltip 
                       formatter={(value, name) => {
                         if (name === 'riskAdjustedReturn') return [value.toFixed(2), 'Risikoadjustierte Rendite'];
@@ -159,6 +159,7 @@ const PositionSizeOptimizationPanel = ({ trades }) => {
                       strokeWidth={2}
                       dot={{ r: 4 }}
                       activeDot={{ r: 6 }}
+                      yAxisId="left"
                     />
                     <Line 
                       type="monotone" 
@@ -168,6 +169,7 @@ const PositionSizeOptimizationPanel = ({ trades }) => {
                       strokeWidth={2}
                       dot={{ r: 4 }}
                       strokeDasharray="5 5"
+                      yAxisId="left"
                     />
                   </LineChart>
                 </ResponsiveContainer>
@@ -194,6 +196,7 @@ const PositionSizeOptimizationPanel = ({ trades }) => {
                     name="Emotionaler Zustand" 
                   />
                   <YAxis 
+                    yAxisId="left"
                     type="number" 
                     dataKey="avgSize" 
                     name="Durchschnittliche Positionsgröße" 
@@ -214,6 +217,7 @@ const PositionSizeOptimizationPanel = ({ trades }) => {
                     name="Emotionen & Positionsgröße" 
                     data={optimizationData.emotionCorrelation.emotionBySize} 
                     fill="#8884d8"
+                    yAxisId="left"
                   />
                 </ScatterChart>
               </ResponsiveContainer>

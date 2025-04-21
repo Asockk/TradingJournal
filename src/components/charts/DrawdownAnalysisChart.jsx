@@ -59,7 +59,7 @@ const DrawdownAnalysisChart = ({ drawdownData }) => {
             >
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis dataKey="date" />
-              <YAxis />
+              <YAxis yAxisId="left" />
               <Tooltip content={<CustomTooltip />} />
               
               {/* Draw reference lines for major drawdowns */}
@@ -70,7 +70,8 @@ const DrawdownAnalysisChart = ({ drawdownData }) => {
                     key={`dd-${index}`}
                     x={dd.lowestPointDate} 
                     stroke="#ef4444" 
-                    strokeDasharray="3 3" 
+                    strokeDasharray="3 3"
+                    yAxisId="left" 
                   />
                 ))
               }
@@ -87,7 +88,8 @@ const DrawdownAnalysisChart = ({ drawdownData }) => {
                 dataKey="value" 
                 stroke="#3b82f6" 
                 fillOpacity={1} 
-                fill="url(#colorValue)" 
+                fill="url(#colorValue)"
+                yAxisId="left" 
               />
             </AreaChart>
           </ResponsiveContainer>
