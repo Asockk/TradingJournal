@@ -3,12 +3,14 @@ import { Info, Sparkles } from 'lucide-react';
 
 /**
  * Component for selecting win probability with slider and visual feedback
+ * FIXED to show EV status based on actual EV value instead of just probability
  */
 const WinProbabilityInput = ({ 
   value, 
   onChange, 
   onAutoSuggest,
   hasHistoricalData = false,
+  expectedValue, // New parameter to access the actual expected value
   className = '' 
 }) => {
   // Color based on probability
@@ -19,6 +21,10 @@ const WinProbabilityInput = ({
     if (probability > 30) return 'bg-orange-500';
     return 'bg-red-500';
   };
+
+  // Determine if EV is positive based on the actual calculated EV value
+  // rather than just the probability threshold
+  const isPositiveEV = expectedValue && parseFloat(expectedValue) > 0;
 
   return (
     <div className={`${className}`}>
@@ -55,8 +61,8 @@ const WinProbabilityInput = ({
               style={{ width: `${value}%` }}
             ></div>
           </div>
-          <span className={`text-xs font-medium ${parseFloat(value) > 50 ? 'text-green-600' : 'text-red-600'}`}>
-            {parseFloat(value) > 50 ? 'Positiver EV' : 'Negativer EV'}
+          <span className={`text-xs font-medium ${isPositiveEV ? 'text-green-600' : 'text-red-600'}`}>
+            {isPositiveEV ? 'Positiver EV' : 'Negativer EV'}
           </span>
         </div>
         

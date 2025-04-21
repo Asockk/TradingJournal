@@ -331,13 +331,14 @@ const EntryTabContent = ({
           </div>
         </div>
         
-        {/* Win Probability Input */}
+        {/* Win Probability Input - Now passing the expectedValue */}
         <div className="lg:col-span-3">
           <WinProbabilityInput
             value={currentTrade.winProbability || 50}
             onChange={(value) => setCurrentTrade(prev => ({ ...prev, winProbability: value }))}
             onAutoSuggest={handleAutoSuggestWinProbability}
             hasHistoricalData={allTrades && allTrades.length >= 10}
+            expectedValue={currentTrade.expectedValue} // Pass the expected value for correct EV indication
           />
         </div>
         
