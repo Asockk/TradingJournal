@@ -1,5 +1,6 @@
 /**
  * Utility module for Expected Value statistical analysis
+ * Fixed to work with any number of trades
  */
 
 /**
@@ -18,8 +19,9 @@ export const calculateExpectedValuePerformance = (trades) => {
     !isNaN(parseFloat(trade.pnl))
   );
   
-  if (tradesWithEV.length < 5) {
-    return { evRanges: [] }; // Not enough data
+  // FIX: Allow even 1 trade to display statistics (removed minimum threshold)
+  if (tradesWithEV.length === 0) {
+    return { evRanges: [] }; // Only return empty if truly no data
   }
   
   // Define expected value ranges for grouping
@@ -114,8 +116,9 @@ export const calculateRMultiplePerformance = (trades) => {
     !isNaN(parseFloat(trade.pnl))
   );
   
-  if (tradesWithR.length < 5) {
-    return { rRanges: [] }; // Not enough data
+  // FIX: Allow even 1 trade to display statistics (removed minimum threshold)
+  if (tradesWithR.length === 0) {
+    return { rRanges: [] }; // Only return empty if truly no data
   }
   
   // Define R-Multiple ranges for grouping

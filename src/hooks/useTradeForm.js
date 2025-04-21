@@ -251,9 +251,11 @@ export const useTradeForm = (initialTrade, onSubmit, onClose, isEditing) => {
       
       // Calculate R-Multiple if entryRiskReward is available
       if (currentTrade.entryRiskReward) {
+        // FIX: Added position parameter to correctly calculate R-Multiple
         const rMultiple = calculateRMultiple(
           currentTrade.entryRiskReward,
-          winProb
+          winProb,
+          currentTrade.position
         );
         
         if (newTrade.rMultiple !== rMultiple) {

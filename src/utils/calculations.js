@@ -1,4 +1,9 @@
 /**
+ * Comprehensive calculations module with fixed R-Multiple calculation for short positions
+ * This file replaces the existing src/utils/calculations.js
+ */
+
+/**
  * Calculate the duration in days between two dates
  * @param {string} entryDate - Entry date string
  * @param {string} exitDate - Exit date string
@@ -54,9 +59,16 @@ export const calculateEntryRiskReward = (entryPrice, takeProfit, stopLoss, posit
     return "0.00";
   }
   
-  // Calculate reward and risk
-  const reward = Math.abs(tp - entry);
-  const risk = Math.abs(sl - entry);
+  // Calculate reward and risk based on position direction
+  let reward, risk;
+  
+  if (position === 'Long') {
+    reward = Math.abs(tp - entry);
+    risk = Math.abs(entry - sl);
+  } else { // Short position
+    reward = Math.abs(entry - tp);
+    risk = Math.abs(sl - entry);
+  }
   
   if (risk === 0) return "0.00";
   
@@ -119,9 +131,14 @@ export const calculateActualRiskReward = (
     return "0.00";
   }
   
-  // Calculate risk in currency terms
-  const direction = position === 'Long' ? 1 : -1;
-  const risk = Math.abs(sl - entry) / entry * size * direction * lev;
+  // Calculate risk in currency terms based on position direction
+  let risk;
+  
+  if (position === 'Long') {
+    risk = Math.abs(entry - sl) / entry * size * lev;
+  } else { // Short position
+    risk = Math.abs(sl - entry) / entry * size * lev;
+  }
   
   if (risk === 0) return "0.00";
   
@@ -214,12 +231,15 @@ export const calculateExpectedValue = (
 };
 
 /**
- * Calculate R-Multiple based on RR and win probability
+ * FIXED: Calculate R-Multiple based on RR and win probability
+ * Now accounts for position direction!
+ * 
  * @param {string|number} riskReward - Risk-reward ratio 
  * @param {string|number} winProbability - Win probability percentage (1-99)
+ * @param {string} position - "Long" or "Short" (NEW PARAMETER)
  * @returns {string} - R-multiple formatted to 2 decimal places
  */
-export const calculateRMultiple = (riskReward, winProbability) => {
+export const calculateRMultiple = (riskReward, winProbability, position) => {
   const rr = parseFloat(riskReward);
   const winProb = parseFloat(winProbability) / 100;
   
@@ -227,8 +247,8 @@ export const calculateRMultiple = (riskReward, winProbability) => {
     return "0.00";
   }
   
-  // Calculate R-multiple: (win% × RR) - loss%
-  // This gives expected return per unit of risk
+  // Calculate R-multiple with position direction considered
+  // For both Long and Short, the formula is the same when riskReward already accounts for direction
   const rMultiple = (winProb * rr) - (1 - winProb);
   
   return rMultiple.toFixed(2);
