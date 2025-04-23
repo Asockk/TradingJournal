@@ -75,8 +75,8 @@ export const useTradeForm = (initialTrade, onSubmit, onClose, isEditing) => {
       tradeType: currentTrade.tradeType, // Keep trade type
       preTradeEmotion: 3, // Neutral
       postTradeEmotion: 3, // Neutral
-      followedPlan: true,
-      wouldTakeAgain: true,
+      followedPlan: undefined, // Reset to undefined (not auto-set)
+      wouldTakeAgain: undefined, // Reset to undefined (not auto-set)
       winProbability: 50 // Reset to default
     });
     

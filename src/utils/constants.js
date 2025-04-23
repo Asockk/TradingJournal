@@ -33,12 +33,12 @@ export const initialTradeState = {
   exitCriteria: '',
   preTradeEmotion: 3,
   postTradeEmotion: 3,
-  followedPlan: true,
+  followedPlan: undefined,
   marketCondition: 'Neutral',
   tradeType: 'Other',
   whatWorked: '',
   whatDidntWork: '',
-  wouldTakeAgain: true,
+  wouldTakeAgain: undefined,
   
   // Expected Value Ergänzungen
   winProbability: 50,

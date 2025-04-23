@@ -2,6 +2,9 @@ import React from 'react';
 import { getFieldStyle } from '../../utils/formUtils';
 
 const AnalysisTabContent = ({ currentTrade, handleInputChange, setCurrentTrade }) => {
+  // Helper to check if trade is completed (has exitDate)
+  const isTradeCompleted = !!currentTrade.exitDate;
+
   return (
     <div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -10,26 +13,33 @@ const AnalysisTabContent = ({ currentTrade, handleInputChange, setCurrentTrade }
             Habe ich den Plan befolgt?
           </label>
           <div className="flex items-center space-x-4">
-            <label className="inline-flex items-center">
+            <label className={`inline-flex items-center ${!isTradeCompleted ? 'opacity-50' : ''}`}>
               <input
                 type="radio"
                 name="followedPlan"
                 checked={currentTrade.followedPlan === true}
                 onChange={() => setCurrentTrade(prev => ({ ...prev, followedPlan: true }))}
                 className="mr-1"
+                disabled={!isTradeCompleted}
               />
               <span>Ja</span>
             </label>
-            <label className="inline-flex items-center">
+            <label className={`inline-flex items-center ${!isTradeCompleted ? 'opacity-50' : ''}`}>
               <input
                 type="radio"
                 name="followedPlan"
                 checked={currentTrade.followedPlan === false}
                 onChange={() => setCurrentTrade(prev => ({ ...prev, followedPlan: false }))}
                 className="mr-1"
+                disabled={!isTradeCompleted}
               />
               <span>Nein</span>
             </label>
+            {!isTradeCompleted && (
+              <span className="text-xs text-amber-600 ml-2">
+                Erst nach Trade-Abschluss verfügbar
+              </span>
+            )}
           </div>
         </div>
         
@@ -38,26 +48,33 @@ const AnalysisTabContent = ({ currentTrade, handleInputChange, setCurrentTrade }
             Würde ich diesen Trade wieder machen?
           </label>
           <div className="flex items-center space-x-4">
-            <label className="inline-flex items-center">
+            <label className={`inline-flex items-center ${!isTradeCompleted ? 'opacity-50' : ''}`}>
               <input
                 type="radio"
                 name="wouldTakeAgain"
                 checked={currentTrade.wouldTakeAgain === true}
                 onChange={() => setCurrentTrade(prev => ({ ...prev, wouldTakeAgain: true }))}
                 className="mr-1"
+                disabled={!isTradeCompleted}
               />
               <span>Ja</span>
             </label>
-            <label className="inline-flex items-center">
+            <label className={`inline-flex items-center ${!isTradeCompleted ? 'opacity-50' : ''}`}>
               <input
                 type="radio"
                 name="wouldTakeAgain"
                 checked={currentTrade.wouldTakeAgain === false}
                 onChange={() => setCurrentTrade(prev => ({ ...prev, wouldTakeAgain: false }))}
                 className="mr-1"
+                disabled={!isTradeCompleted}
               />
               <span>Nein</span>
             </label>
+            {!isTradeCompleted && (
+              <span className="text-xs text-amber-600 ml-2">
+                Erst nach Trade-Abschluss verfügbar
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -71,8 +88,10 @@ const AnalysisTabContent = ({ currentTrade, handleInputChange, setCurrentTrade }
             name="whatWorked"
             value={currentTrade.whatWorked}
             onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className={`w-full p-2 border border-gray-300 rounded-md ${!isTradeCompleted ? 'bg-gray-50' : ''}`}
             rows="2"
+            placeholder={isTradeCompleted ? "Was hat bei diesem Trade gut funktioniert?" : "Verfügbar nach Trade-Abschluss"}
+            disabled={!isTradeCompleted}
           ></textarea>
         </div>
         
@@ -84,8 +103,10 @@ const AnalysisTabContent = ({ currentTrade, handleInputChange, setCurrentTrade }
             name="whatDidntWork"
             value={currentTrade.whatDidntWork}
             onChange={handleInputChange}
-            className="w-full p-2 border border-gray-300 rounded-md"
+            className={`w-full p-2 border border-gray-300 rounded-md ${!isTradeCompleted ? 'bg-gray-50' : ''}`}
             rows="2"
+            placeholder={isTradeCompleted ? "Was hat nicht funktioniert oder könnte verbessert werden?" : "Verfügbar nach Trade-Abschluss"}
+            disabled={!isTradeCompleted}
           ></textarea>
         </div>
       </div>
@@ -100,6 +121,7 @@ const AnalysisTabContent = ({ currentTrade, handleInputChange, setCurrentTrade }
           onChange={handleInputChange}
           className="w-full p-2 border border-gray-300 rounded-md"
           rows="2"
+          placeholder="Marktbedingungen, die zum Überdenken des Trades führen würden"
         ></textarea>
       </div>
       
@@ -111,10 +133,20 @@ const AnalysisTabContent = ({ currentTrade, handleInputChange, setCurrentTrade }
           name="notes"
           value={currentTrade.notes}
           onChange={handleInputChange}
-          className="w-full p-2 border border-gray-300 rounded-md"
+          className={`w-full p-2 border border-gray-300 rounded-md ${!isTradeCompleted ? 'bg-gray-50' : ''}`}
           rows="3"
+          placeholder={isTradeCompleted ? "Weitere Beobachtungen oder Learnings aus diesem Trade" : "Verfügbar nach Trade-Abschluss"}
+          disabled={!isTradeCompleted}
         ></textarea>
       </div>
+      
+      {!isTradeCompleted && (
+        <div className="mt-4 p-3 bg-amber-50 text-amber-700 rounded-md">
+          <p className="text-sm">
+            <strong>Hinweis:</strong> Einige Felder in dieser Analyse werden erst nach dem Abschluss des Trades (Setzen eines Exit-Datums) verfügbar sein.
+          </p>
+        </div>
+      )}
     </div>
   );
 };
