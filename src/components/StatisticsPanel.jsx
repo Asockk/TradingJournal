@@ -1,30 +1,31 @@
 // src/components/StatisticsPanel.jsx
-import React, { useState, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from './ui/card';
 import StatisticsCards from './stats/StatisticsCards';
 import AlphaTraderCards from './stats/AlphaTraderCards';
 import AssetPerformanceTable from './stats/AssetPerformanceTable';
 import PeriodComparisonCard from './stats/PeriodComparisonCard';
 import PositionSizeOptimizationPanel from './stats/PositionSizeOptimizationPanel';
-
-// Lazy load charts for better performance
-const EquityChart = lazy(() => import('./charts/EquityChart'));
-const AssetPerformanceChart = lazy(() => import('./charts/AssetPerformanceChart'));
-const HourlyPerformanceHeatmap = lazy(() => import('./charts/HourlyPerformanceHeatmap'));
-const ConvictionPerformanceChart = lazy(() => import('./charts/ConvictionPerformanceChart'));
-const WeekdayPerformanceChart = lazy(() => import('./charts/WeekdayPerformanceChart'));
-const PlanFollowedChart = lazy(() => import('./charts/PlanFollowedChart'));
-const TradeTypePerformanceChart = lazy(() => import('./charts/TradeTypePerformanceChart'));
-const DurationPerformanceChart = lazy(() => import('./charts/DurationPerformanceChart'));
-const EmotionPerformanceChart = lazy(() => import('./charts/EmotionPerformanceChart'));
-const EmotionTransitionChart = lazy(() => import('./charts/EmotionTransitionChart'));
-const RiskRewardComparisonChart = lazy(() => import('./charts/RiskRewardComparisonChart'));
-const StopLossAdherenceChart = lazy(() => import('./charts/StopLossAdherenceChart'));
-const DrawdownAnalysisChart = lazy(() => import('./charts/DrawdownAnalysisChart'));
-const ExpectedValuePerformanceChart = lazy(() => import('./charts/ExpectedValuePerformanceChart'));
 import { calculateExpectedValuePerformance, calculateRMultiplePerformance } from '../utils/expectedValueStats';
 import { calculateStats } from '../utils/statsCalculations';
 import { ArrowLeft } from 'lucide-react';
+// Import memoized charts
+import {
+  EquityChart,
+  AssetPerformanceChart,
+  HourlyPerformanceHeatmap,
+  ConvictionPerformanceChart,
+  WeekdayPerformanceChart,
+  PlanFollowedChart,
+  TradeTypePerformanceChart,
+  DurationPerformanceChart,
+  EmotionPerformanceChart,
+  EmotionTransitionChart,
+  RiskRewardComparisonChart,
+  StopLossAdherenceChart,
+  DrawdownAnalysisChart,
+  ExpectedValuePerformanceChart
+} from './charts';
 
 // Komponente für Zeitbereichsauswahl
 const TimeRangeSelector = ({ timeRange, setTimeRange }) => (
@@ -82,26 +83,10 @@ const NoDataView = ({ onReset }) => (
   </Card>
 );
 
-// Loading component for charts
-const ChartLoading = () => (
-  <Card>
-    <CardContent className="p-4">
-      <div className="h-64 flex items-center justify-center">
-        <div className="animate-pulse">
-          <div className="h-4 w-32 bg-gray-300 rounded mb-4"></div>
-          <div className="h-48 w-full bg-gray-200 rounded"></div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-);
-
-// Wrapper für Chart-Komponenten mit einheitlichem Layout und Lazy Loading
+// Wrapper für Chart-Komponenten mit einheitlichem Layout
 const ChartWrapper = ({ children, mdCols = 1 }) => (
   <div className={`grid grid-cols-1 ${mdCols > 1 ? 'md:grid-cols-2' : ''} gap-6 mb-6`}>
-    <Suspense fallback={<ChartLoading />}>
-      {children}
-    </Suspense>
+    {children}
   </div>
 );
 

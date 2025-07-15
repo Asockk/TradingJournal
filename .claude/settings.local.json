@@ -6,7 +6,9 @@
       "Bash(npm test:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(pkill:*)",
+      "Bash(true)"
     ]
   },
   "enableAllProjectMcpServers": false

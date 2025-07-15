@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent } from '../ui/card';
-import { Calendar, CircleCheck, TrendingUp, Activity, Flame, Clock, BarChart2, Cloud } from 'lucide-react';
+import { Calendar, CheckCircle2, TrendingUp, Activity, Flame, Clock, BarChart2, Cloud } from 'lucide-react';
 
 const StatisticCard = ({ title, value, subValue, icon }) => {
   const Icon = icon;
@@ -95,7 +95,7 @@ const AlphaTraderCards = ({ stats, currency }) => {
         subValue={planPnLDiff !== null ? 
           `${planPnLDiff > 0 ? '+' : ''}${planPnLDiff.toFixed(2)} ${currency}/Trade` : 
           'Keine Daten'}
-        icon={CircleCheck}
+        icon={CheckCircle2}
       />
       
       <StatisticCard

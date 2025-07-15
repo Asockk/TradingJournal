@@ -15,7 +15,41 @@ import {
  * @returns {Object} - Statistics object
  */
 export const calculateStats = (filteredTrades) => {
-  if (!filteredTrades.length) return null;
+  if (!filteredTrades.length) {
+    // Return default values for empty trades
+    return {
+      tradeCount: 0,
+      winRate: 0,
+      avgPnL: 0,
+      avgWin: 0,
+      avgLoss: 0,
+      expectancy: 0,
+      avgRiskReward: 0,
+      medianRR: 0,
+      maxWin: 0,
+      maxLoss: 0,
+      maxDrawdown: 0,
+      totalPnL: 0,
+      assetPnL: [],
+      cumulativePnL: [],
+      hourlyPerformance: [],
+      convictionPerformance: [],
+      emotionPerformance: [],
+      emotionTransitions: [],
+      streaks: { maxWinStreak: 0, maxLossStreak: 0 },
+      profitFactor: 0,
+      sharpe: 0,
+      sortino: 0,
+      planStats: { followedPlanCount: 0, notFollowedPlanCount: 0 },
+      tradeTypeStats: [],
+      marketConditionStats: [],
+      durationStats: { bestDuration: 'N/A', durationStats: [] },
+      weekdayStats: { bestWeekday: 'N/A', weekdayStats: [] },
+      riskRewardComparison: [],
+      stopLossAdherence: { adherenceRate: 0, improvedCount: 0, worsenedCount: 0 },
+      drawdownAnalysis: []
+    };
+  }
 
   // Basic metrics
   const profitTrades = filteredTrades.filter(trade => parseFloat(trade.pnl) > 0);
@@ -40,6 +74,14 @@ export const calculateStats = (filteredTrades) => {
   const pnlValues = filteredTrades.map(trade => parseFloat(trade.pnl || 0));
   const maxWin = Math.max(...pnlValues);
   const maxLoss = Math.min(...pnlValues);
+  
+  // Calculate average win and average loss
+  const avgWin = profitTrades.length > 0 
+    ? profitTrades.reduce((sum, trade) => sum + parseFloat(trade.pnl || 0), 0) / profitTrades.length
+    : 0;
+  const avgLoss = lossTrades.length > 0
+    ? lossTrades.reduce((sum, trade) => sum + parseFloat(trade.pnl || 0), 0) / lossTrades.length
+    : 0;
   
   // Group by asset for performance calculation
   const assetPerformance = _.groupBy(filteredTrades, 'asset');
@@ -69,9 +111,9 @@ export const calculateStats = (filteredTrades) => {
       
       if (runningTotal > maxSoFar) {
         maxSoFar = runningTotal;
-      } else {
-        const currentDrawdown = maxSoFar === 0 ? 0 : 
-          (maxSoFar - runningTotal) / Math.abs(maxSoFar) * 100;
+      } else if (maxSoFar > 0) {
+        // Only calculate drawdown when we have a positive peak
+        const currentDrawdown = ((maxSoFar - runningTotal) / maxSoFar) * 100;
         if (currentDrawdown > maxDrawdown) {
           maxDrawdown = currentDrawdown;
         }
@@ -122,10 +164,19 @@ export const calculateStats = (filteredTrades) => {
   const stopLossAdherence = calculateStopLossAdherence(filteredTrades);
   const drawdownAnalysis = calculateDrawdownAnalysis(filteredTrades);
 
+  // Calculate expectancy (expected profit per trade)
+  const expectancy = filteredTrades.length > 0 && lossTrades.length > 0
+    ? (profitTrades.length / filteredTrades.length * avgWin) - 
+      (lossTrades.length / filteredTrades.length * Math.abs(avgLoss))
+    : avgPnL;
+
   return {
     tradeCount: filteredTrades.length,
     winRate: (profitTrades.length / filteredTrades.length) * 100,
     avgPnL,
+    avgWin,
+    avgLoss,
+    expectancy,
     avgRiskReward: riskRewardValues.length ? 
       riskRewardValues.reduce((a, b) => a + b, 0) / riskRewardValues.length : 0,
     medianRR,
@@ -264,7 +315,12 @@ export const calculateSharpeRatio = (trades, riskFreeRate = 0.01) => {
   if (stdDev === 0) return 0;
   
   // Calculate Sharpe ratio
-  return (avgReturn - riskFreeRate) / stdDev * annualizationFactor;
+  // Annualize returns properly: (annualized return - annualized risk-free rate) / annualized std dev
+  const annualizedReturn = avgReturn * tradesPerYear;
+  const annualizedStdDev = stdDev * annualizationFactor;
+  const annualizedRiskFreeRate = riskFreeRate; // Already annual
+  
+  return (annualizedReturn - annualizedRiskFreeRate) / annualizedStdDev;
 };
 
 /**
@@ -282,12 +338,14 @@ export const calculateSortinoRatio = (trades, riskFreeRate = 0.01) => {
   // Calculate average return
   const avgReturn = returns.reduce((sum, value) => sum + value, 0) / returns.length;
   
-  // Calculate downside deviation (only negative returns)
-  const negativeReturns = returns.filter(value => value < 0);
+  // Calculate downside deviation (returns below MAR - Minimum Acceptable Return)
+  const MAR = 0; // Minimum Acceptable Return, typically 0
+  const downsideReturns = returns.map(value => Math.min(0, value - MAR));
+  const squaredDownsideReturns = downsideReturns.filter(value => value < 0);
   
-  if (negativeReturns.length === 0) return avgReturn > 0 ? 999.99 : 0;
+  if (squaredDownsideReturns.length === 0) return avgReturn > 0 ? 999.99 : 0;
   
-  const downsideVariance = negativeReturns.reduce((sum, value) => sum + Math.pow(value, 2), 0) / negativeReturns.length;
+  const downsideVariance = squaredDownsideReturns.reduce((sum, value) => sum + Math.pow(value, 2), 0) / returns.length;
   const downsideDeviation = Math.sqrt(downsideVariance);
   
   // Calculate trading days based on date range
@@ -299,8 +357,12 @@ export const calculateSortinoRatio = (trades, riskFreeRate = 0.01) => {
   const tradesPerYear = (trades.length / daysDiff) * 252;
   const annualizationFactor = Math.sqrt(Math.max(1, tradesPerYear));
   
-  // Calculate Sortino ratio
-  return (avgReturn - riskFreeRate) / downsideDeviation * annualizationFactor;
+  // Calculate Sortino ratio with proper annualization
+  const annualizedReturn = avgReturn * tradesPerYear;
+  const annualizedDownsideDeviation = downsideDeviation * annualizationFactor;
+  const annualizedRiskFreeRate = riskFreeRate; // Already annual
+  
+  return (annualizedReturn - annualizedRiskFreeRate) / annualizedDownsideDeviation;
 };
 
 /**
