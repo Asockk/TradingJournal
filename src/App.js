@@ -104,7 +104,7 @@ const App = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-dark-bg text-gray-900 dark:text-dark-text transition-colors">
       {/* Header with Import/Export buttons */}
       <Header 
         onImport={handleImport}
@@ -114,15 +114,23 @@ const App = () => {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto p-4">
         {/* Tabs */}
-        <div className="flex border-b border-gray-200 mb-6">
+        <div className="flex border-b border-gray-200 dark:border-dark-border mb-6">
           <button
-            className={`px-4 py-2 font-medium ${activeTab === 'trades' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}
+            className={`px-4 py-2 font-medium transition-colors ${
+              activeTab === 'trades' 
+                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400' 
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
             onClick={() => setActiveTab('trades')}
           >
             Trades
           </button>
           <button
-            className={`px-4 py-2 font-medium ${activeTab === 'stats' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-500'}`}
+            className={`px-4 py-2 font-medium transition-colors ${
+              activeTab === 'stats' 
+                ? 'border-b-2 border-blue-500 text-blue-600 dark:text-blue-400' 
+                : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300'
+            }`}
             onClick={() => setActiveTab('stats')}
           >
             Statistiken
@@ -137,7 +145,7 @@ const App = () => {
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setIsFilterOpen(!isFilterOpen)}
-                  className="flex items-center gap-1 bg-white p-2 rounded-md border border-gray-300 shadow-sm"
+                  className="flex items-center gap-1 bg-white dark:bg-dark-surface p-2 rounded-md border border-gray-300 dark:border-dark-border shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   <Filter size={18} />
                   Filter
@@ -160,7 +168,7 @@ const App = () => {
                 {/* Vorlagen-Button */}
                 <button
                   onClick={() => setIsTemplateModalOpen(true)}
-                  className="flex items-center gap-1 bg-white p-2 rounded-md border border-gray-300 shadow-sm"
+                  className="flex items-center gap-1 bg-white dark:bg-dark-surface p-2 rounded-md border border-gray-300 dark:border-dark-border shadow-sm hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
                   <BookMarked size={18} />
                   Vorlagen
@@ -173,7 +181,7 @@ const App = () => {
                   setEditingId(null);
                   setIsFormOpen(true);
                 }}
-                className="flex items-center gap-1 bg-blue-600 text-white px-3 py-2 rounded-md"
+                className="flex items-center gap-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-md transition-colors"
               >
                 <Plus size={18} />
                 Neuer Trade

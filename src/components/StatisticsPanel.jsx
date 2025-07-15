@@ -1,25 +1,27 @@
 // src/components/StatisticsPanel.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { Card, CardContent } from './ui/card';
 import StatisticsCards from './stats/StatisticsCards';
 import AlphaTraderCards from './stats/AlphaTraderCards';
-import EquityChart from './charts/EquityChart';
-import AssetPerformanceChart from './charts/AssetPerformanceChart';
 import AssetPerformanceTable from './stats/AssetPerformanceTable';
-import HourlyPerformanceHeatmap from './charts/HourlyPerformanceHeatmap';
-import ConvictionPerformanceChart from './charts/ConvictionPerformanceChart';
-import WeekdayPerformanceChart from './charts/WeekdayPerformanceChart';
-import PlanFollowedChart from './charts/PlanFollowedChart';
-import TradeTypePerformanceChart from './charts/TradeTypePerformanceChart';
-import DurationPerformanceChart from './charts/DurationPerformanceChart';
-import EmotionPerformanceChart from './charts/EmotionPerformanceChart';
-import EmotionTransitionChart from './charts/EmotionTransitionChart';
 import PeriodComparisonCard from './stats/PeriodComparisonCard';
-import RiskRewardComparisonChart from './charts/RiskRewardComparisonChart';
-import StopLossAdherenceChart from './charts/StopLossAdherenceChart';
-import DrawdownAnalysisChart from './charts/DrawdownAnalysisChart';
 import PositionSizeOptimizationPanel from './stats/PositionSizeOptimizationPanel';
-import ExpectedValuePerformanceChart from './charts/ExpectedValuePerformanceChart';
+
+// Lazy load charts for better performance
+const EquityChart = lazy(() => import('./charts/EquityChart'));
+const AssetPerformanceChart = lazy(() => import('./charts/AssetPerformanceChart'));
+const HourlyPerformanceHeatmap = lazy(() => import('./charts/HourlyPerformanceHeatmap'));
+const ConvictionPerformanceChart = lazy(() => import('./charts/ConvictionPerformanceChart'));
+const WeekdayPerformanceChart = lazy(() => import('./charts/WeekdayPerformanceChart'));
+const PlanFollowedChart = lazy(() => import('./charts/PlanFollowedChart'));
+const TradeTypePerformanceChart = lazy(() => import('./charts/TradeTypePerformanceChart'));
+const DurationPerformanceChart = lazy(() => import('./charts/DurationPerformanceChart'));
+const EmotionPerformanceChart = lazy(() => import('./charts/EmotionPerformanceChart'));
+const EmotionTransitionChart = lazy(() => import('./charts/EmotionTransitionChart'));
+const RiskRewardComparisonChart = lazy(() => import('./charts/RiskRewardComparisonChart'));
+const StopLossAdherenceChart = lazy(() => import('./charts/StopLossAdherenceChart'));
+const DrawdownAnalysisChart = lazy(() => import('./charts/DrawdownAnalysisChart'));
+const ExpectedValuePerformanceChart = lazy(() => import('./charts/ExpectedValuePerformanceChart'));
 import { calculateExpectedValuePerformance, calculateRMultiplePerformance } from '../utils/expectedValueStats';
 import { calculateStats } from '../utils/statsCalculations';
 import { ArrowLeft } from 'lucide-react';
@@ -80,10 +82,26 @@ const NoDataView = ({ onReset }) => (
   </Card>
 );
 
-// Wrapper für Chart-Komponenten mit einheitlichem Layout
+// Loading component for charts
+const ChartLoading = () => (
+  <Card>
+    <CardContent className="p-4">
+      <div className="h-64 flex items-center justify-center">
+        <div className="animate-pulse">
+          <div className="h-4 w-32 bg-gray-300 rounded mb-4"></div>
+          <div className="h-48 w-full bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
+// Wrapper für Chart-Komponenten mit einheitlichem Layout und Lazy Loading
 const ChartWrapper = ({ children, mdCols = 1 }) => (
   <div className={`grid grid-cols-1 ${mdCols > 1 ? 'md:grid-cols-2' : ''} gap-6 mb-6`}>
-    {children}
+    <Suspense fallback={<ChartLoading />}>
+      {children}
+    </Suspense>
   </div>
 );
 
