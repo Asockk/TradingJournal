@@ -314,9 +314,10 @@ export const calculateSharpeRatio = (trades, riskFreeRate = 0.01) => {
   
   if (stdDev === 0) return 0;
   
-  // Calculate Sharpe ratio
-  // Annualize returns properly: (annualized return - annualized risk-free rate) / annualized std dev
-  const annualizedReturn = avgReturn * tradesPerYear;
+  // Calculate Sharpe ratio with proper return compounding
+  // For proper annualization, we should compound returns, not multiply linearly
+  const periodsPerYear = 252 / Math.max(1, daysDiff);
+  const annualizedReturn = Math.pow(1 + avgReturn, periodsPerYear) - 1;
   const annualizedStdDev = stdDev * annualizationFactor;
   const annualizedRiskFreeRate = riskFreeRate; // Already annual
   
@@ -357,8 +358,9 @@ export const calculateSortinoRatio = (trades, riskFreeRate = 0.01) => {
   const tradesPerYear = (trades.length / daysDiff) * 252;
   const annualizationFactor = Math.sqrt(Math.max(1, tradesPerYear));
   
-  // Calculate Sortino ratio with proper annualization
-  const annualizedReturn = avgReturn * tradesPerYear;
+  // Calculate Sortino ratio with proper return compounding
+  const periodsPerYear = 252 / Math.max(1, daysDiff);
+  const annualizedReturn = Math.pow(1 + avgReturn, periodsPerYear) - 1;
   const annualizedDownsideDeviation = downsideDeviation * annualizationFactor;
   const annualizedRiskFreeRate = riskFreeRate; // Already annual
   

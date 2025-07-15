@@ -11,11 +11,19 @@ import { roundTo, formatNumber, safeMultiply, safeDivide, safeSubtract, parseNum
  * @param {string} exitDate - Exit date string
  * @returns {string} - Duration in days
  */
-export const calculateDuration = (entryDate, exitDate) => {
-  const entry = new Date(entryDate);
-  const exit = new Date(exitDate);
-  const diffTime = Math.abs(exit - entry);
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+export const calculateDuration = (entryDate, exitDate, entryTime, exitTime) => {
+  // Construct full datetime strings
+  const entryDateTime = new Date(`${entryDate}${entryTime ? 'T' + entryTime : ''}`);
+  const exitDateTime = new Date(`${exitDate}${exitTime ? 'T' + exitTime : ''}`);
+  
+  // Validate dates
+  if (isNaN(entryDateTime.getTime()) || isNaN(exitDateTime.getTime())) {
+    return "0";
+  }
+  
+  const diffTime = Math.abs(exitDateTime - entryDateTime);
+  // Use Math.floor for partial days, add 1 to make it inclusive
+  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
   return diffDays.toString();
 };
 
@@ -34,13 +42,14 @@ export const calculateExpectedPnL = (entryPrice, takeProfit, positionSize, posit
   const size = parseFloat(positionSize);
   const lev = parseFloat(leverage);
   
-  if (isNaN(entry) || isNaN(tp) || isNaN(size) || isNaN(lev)) {
+  if (isNaN(entry) || isNaN(tp) || isNaN(size) || isNaN(lev) || entry === 0) {
     return "0.00";
   }
   
   const direction = position === 'Long' ? 1 : -1;
-  const priceChange = safeDivide(tp - entry, entry, 6);
-  const expectedPnL = formatNumber(priceChange * size * direction * lev);
+  // Correct formula: (price difference * position size * leverage) / entry price
+  const priceDiff = (tp - entry) * direction;
+  const expectedPnL = formatNumber((priceDiff * size * lev) / entry);
   
   return expectedPnL;
 };
@@ -73,7 +82,7 @@ export const calculateEntryRiskReward = (entryPrice, takeProfit, stopLoss, posit
     risk = Math.abs(sl - entry);
   }
   
-  if (risk === 0) return "∞";
+  if (risk === 0) return reward > 0 ? "999.99" : "0.00"; // Max displayable value instead of infinity
   
   const rrRatio = (reward / risk).toFixed(2);
   return rrRatio;
@@ -96,13 +105,14 @@ export const calculatePnL = (entryPrice, exitPrice, positionSize, position, leve
   const lev = parseFloat(leverage);
   const tradeFees = parseFloat(fees || 0);
   
-  if (isNaN(entry) || isNaN(exit) || isNaN(size) || isNaN(lev)) {
+  if (isNaN(entry) || isNaN(exit) || isNaN(size) || isNaN(lev) || entry === 0) {
     return "0.00";
   }
   
   const direction = position === 'Long' ? 1 : -1;
-  const priceChange = safeDivide(exit - entry, entry, 6);
-  const grossPnl = safeMultiply(priceChange * size * direction, lev, 4);
+  // Correct formula: (price difference * position size * leverage) / entry price
+  const priceDiff = (exit - entry) * direction;
+  const grossPnl = (priceDiff * size * lev) / entry;
   const pnl = formatNumber(grossPnl - tradeFees);
   
   return pnl;
@@ -145,7 +155,7 @@ export const calculateActualRiskReward = (
     risk = Math.abs(sl - entry) / entry * size * lev;
   }
   
-  if (risk === 0) return actualPnl > 0 ? "∞" : "0.00";
+  if (risk === 0) return actualPnl > 0 ? "999.99" : "0.00"; // Max displayable value instead of infinity
   
   const actualRR = (actualPnl / Math.abs(risk)).toFixed(2);
   return actualRR;
@@ -166,12 +176,14 @@ export const calculatePotentialGain = (entryPrice, takeProfit, positionSize, pos
   const size = parseFloat(positionSize);
   const lev = parseFloat(leverage);
   
-  if (isNaN(entry) || isNaN(tp) || isNaN(size) || isNaN(lev)) {
+  if (isNaN(entry) || isNaN(tp) || isNaN(size) || isNaN(lev) || entry === 0) {
     return 0;
   }
   
   const direction = position === 'Long' ? 1 : -1;
-  return ((tp - entry) / entry * size * direction * lev);
+  // Correct formula: (price difference * position size * leverage) / entry price
+  const priceDiff = (tp - entry) * direction;
+  return (priceDiff * size * lev) / entry;
 };
 
 /**
@@ -189,12 +201,14 @@ export const calculatePotentialLoss = (entryPrice, stopLoss, positionSize, posit
   const size = parseFloat(positionSize);
   const lev = parseFloat(leverage);
   
-  if (isNaN(entry) || isNaN(sl) || isNaN(size) || isNaN(lev)) {
+  if (isNaN(entry) || isNaN(sl) || isNaN(size) || isNaN(lev) || entry === 0) {
     return 0;
   }
   
   const direction = position === 'Long' ? 1 : -1;
-  return ((sl - entry) / entry * size * direction * lev);
+  // Correct formula: (price difference * position size * leverage) / entry price
+  const priceDiff = (sl - entry) * direction;
+  return (priceDiff * size * lev) / entry;
 };
 
 /**
@@ -229,7 +243,8 @@ export const calculateExpectedValue = (
   // Calculate potential gain at take profit (minus fees)
   const potentialGain = calculatePotentialGain(entryPrice, takeProfit, positionSize, position, leverage) - tradeFees;
   
-  // Calculate potential loss at stop loss (plus fees, since fees add to the loss)
+  // Calculate potential loss at stop loss (fees make the loss worse, so we subtract more)
+  // Since potentialLoss is typically negative, we need to subtract fees to make it more negative
   const potentialLoss = calculatePotentialLoss(entryPrice, stopLoss, positionSize, position, leverage) - tradeFees;
   
   // Calculate expected value
@@ -244,10 +259,9 @@ export const calculateExpectedValue = (
  * 
  * @param {string|number} riskReward - Risk-reward ratio 
  * @param {string|number} winProbability - Win probability percentage (1-99)
- * @param {string} position - "Long" or "Short" (NEW PARAMETER)
  * @returns {string} - R-multiple formatted to 2 decimal places
  */
-export const calculateRMultiple = (riskReward, winProbability, position) => {
+export const calculateRMultiple = (riskReward, winProbability) => {
   const rr = parseFloat(riskReward);
   const winProb = parseFloat(winProbability) / 100;
   
@@ -255,8 +269,8 @@ export const calculateRMultiple = (riskReward, winProbability, position) => {
     return "0.00";
   }
   
-  // Calculate R-multiple with position direction considered
-  // For both Long and Short, the formula is the same when riskReward already accounts for direction
+  // Calculate R-multiple
+  // The risk-reward ratio already accounts for position direction
   const rMultiple = (winProb * rr) - (1 - winProb);
   
   return rMultiple.toFixed(2);

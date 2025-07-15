@@ -194,8 +194,8 @@ export const calculateStopLossAdherence = (trades) => {
     const pnl = parseFloat(trade.pnl || 0);
     const position = trade.position; // Long or Short
     
-    // Only analyze losing trades (winning trades don't hit stop losses)
-    if (pnl >= 0) return;
+    // Skip if no exit price (trade still open)
+    if (!exitPrice || isNaN(exitPrice)) return;
     
     // Calculate how close the exit was to the stop loss
     // For long positions: stop loss is below entry

@@ -105,7 +105,8 @@ export const detectTiltPatterns = (trades) => {
   
   // Get trades from last 2 hours
   const recentTrades = trades.filter(trade => {
-    const tradeTime = new Date(`${trade.entryDate} ${trade.entryTime || '00:00'}`);
+    const tradeTime = new Date(`${trade.entryDate}${trade.entryTime ? 'T' + trade.entryTime : ''}`);
+    if (isNaN(tradeTime.getTime())) return false;
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000);
     return tradeTime > twoHoursAgo;
   });
@@ -114,8 +115,8 @@ export const detectTiltPatterns = (trades) => {
   if (recentTrades.length >= 3) {
     // Calculate average time between trades
     const tradeTimes = recentTrades.map(t => 
-      new Date(`${t.entryDate} ${t.entryTime || '00:00'}`).getTime()
-    ).sort();
+      new Date(`${t.entryDate}${t.entryTime ? 'T' + t.entryTime : ''}`).getTime()
+    ).filter(time => !isNaN(time)).sort();
     
     let totalTimeDiff = 0;
     for (let i = 1; i < tradeTimes.length; i++) {
@@ -130,7 +131,7 @@ export const detectTiltPatterns = (trades) => {
         type: 'rapid_trading',
         severity: 'high',
         title: 'Schnelles Trading erkannt',
-        message: `${recentTrades.length} Trades in ${Math.round(avgMinutes * recentTrades.length)} Minuten`,
+        message: `${recentTrades.length} Trades in ${Math.round((tradeTimes[tradeTimes.length - 1] - tradeTimes[0]) / (1000 * 60))} Minuten`,
         detail: 'Das ist 5x schneller als dein Durchschnitt.',
         recommendation: 'Mache eine 30-minütige Pause zur Reflexion.'
       });
@@ -145,19 +146,23 @@ export const detectTiltPatterns = (trades) => {
     const lastLoss = parseFloat(secondLastTrade.pnl) < 0;
     const bigLoss = Math.abs(parseFloat(secondLastTrade.pnl)) > 50; // Threshold
     
-    const lastTradeTime = new Date(`${lastTrade.entryDate} ${lastTrade.entryTime || '00:00'}`);
-    const secondLastTime = new Date(`${secondLastTrade.exitDate} ${secondLastTrade.exitTime || '00:00'}`);
-    const timeDiff = (lastTradeTime - secondLastTime) / (1000 * 60); // minutes
+    const lastTradeTime = new Date(`${lastTrade.entryDate}${lastTrade.entryTime ? 'T' + lastTrade.entryTime : ''}`);
+    const secondLastTime = new Date(`${secondLastTrade.exitDate}${secondLastTrade.exitTime ? 'T' + secondLastTrade.exitTime : ''}`);
     
-    if (lastLoss && bigLoss && timeDiff < 15) {
-      warnings.push({
-        type: 'revenge_trading',
-        severity: 'critical',
-        title: 'Revenge Trading Warnung',
-        message: 'Du tradest direkt nach einem großen Verlust.',
-        detail: `Letzter Verlust: ${secondLastTrade.pnl}€ vor ${Math.round(timeDiff)} Minuten`,
-        recommendation: 'STOP! Mache mindestens 1 Stunde Pause.'
-      });
+    // Validate dates before calculation
+    if (!isNaN(lastTradeTime.getTime()) && !isNaN(secondLastTime.getTime())) {
+      const timeDiff = (lastTradeTime - secondLastTime) / (1000 * 60); // minutes
+      
+      if (lastLoss && bigLoss && timeDiff < 15 && timeDiff >= 0) {
+        warnings.push({
+          type: 'revenge_trading',
+          severity: 'critical',
+          title: 'Revenge Trading Warnung',
+          message: 'Du tradest direkt nach einem großen Verlust.',
+          detail: `Letzter Verlust: ${secondLastTrade.pnl}€ vor ${Math.round(timeDiff)} Minuten`,
+          recommendation: 'STOP! Mache mindestens 1 Stunde Pause.'
+        });
+      }
     }
   }
   

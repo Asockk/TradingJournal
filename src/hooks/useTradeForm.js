@@ -9,6 +9,7 @@ import {
   calculateExpectedValue,
   calculateRMultiple
 } from '../utils/calculations';
+import { validateTradeForm } from '../utils/formUtils';
 
 /**
  * Custom hook for managing trade form state and calculations
@@ -53,12 +54,31 @@ export const useTradeForm = (initialTrade, onSubmit, onClose, isEditing) => {
   // Handle form submission
   const handleSubmit = (e) => {
     e.preventDefault();
+    
+    // Validate form before submission
+    const errors = validateTradeForm(currentTrade);
+    if (Object.keys(errors).length > 0) {
+      // Show first error as alert (in production, use proper error UI)
+      const firstError = Object.values(errors)[0];
+      alert(firstError);
+      return;
+    }
+    
     onSubmit(currentTrade);
   };
   
   // Save and add new trade
   const handleSaveAndAddNew = (e) => {
     e.preventDefault();
+    
+    // Validate form before submission
+    const errors = validateTradeForm(currentTrade);
+    if (Object.keys(errors).length > 0) {
+      // Show first error as alert (in production, use proper error UI)
+      const firstError = Object.values(errors)[0];
+      alert(firstError);
+      return;
+    }
     
     // Save existing trade
     onSubmit(currentTrade);
