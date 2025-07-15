@@ -1,6 +1,6 @@
 // src/components/TradeForm.jsx
 import React, { useState } from 'react';
-import { X, Save, Plus, ArrowUp, ArrowDown, Maximize, Minimize } from 'lucide-react';
+import { X, Save, Plus, ArrowUp, Maximize, Minimize } from 'lucide-react';
 import { useTradeForm } from '../hooks/useTradeForm';
 import QuickModeToggle from './form/QuickModeToggle';
 import QuickEntryForm from './form/QuickEntryForm';
@@ -10,10 +10,14 @@ import ExitTabContent from './form/ExitTabContent';
 import AnalysisTabContent from './form/AnalysisTabContent';
 import TemplateSelector from './templates/TemplateSelector';
 import TemplateModal from './templates/TemplateModal';
+import PsychologicalWarnings from './warnings/PsychologicalWarnings';
+import PersonalizedChecklist from './checklist/PersonalizedChecklist';
 
 const TradeForm = ({ trade, onClose, onSubmit, isEditing, trades = [] }) => {
   const [isFullScreen, setIsFullScreen] = useState(false);
   const [isTemplateModalOpen, setIsTemplateModalOpen] = useState(false);
+  const [allCriticalChecked, setAllCriticalChecked] = useState(false);
+  const [dismissedWarnings, setDismissedWarnings] = useState([]);
   
   const {
     currentTrade,
@@ -129,12 +133,33 @@ const TradeForm = ({ trade, onClose, onSubmit, isEditing, trades = [] }) => {
               
               {/* Tab-Inhalte */}
               {activeTab === 'entry' && (
-                <EntryTabContent 
-                  currentTrade={currentTrade} 
-                  handleInputChange={handleInputChange} 
-                  setCurrentTrade={setCurrentTrade}
-                  allTrades={trades} 
-                />
+                <>
+                  {/* Psychological Warnings */}
+                  {!isEditing && (
+                    <>
+                      <PsychologicalWarnings 
+                        trades={trades}
+                        currentEmotion={currentTrade.emotion}
+                        onDismiss={setDismissedWarnings}
+                      />
+                      
+                      {/* Personalized Checklist */}
+                      <div className="mb-4">
+                        <PersonalizedChecklist 
+                          trades={trades}
+                          onAllChecked={setAllCriticalChecked}
+                        />
+                      </div>
+                    </>
+                  )}
+                  
+                  <EntryTabContent 
+                    currentTrade={currentTrade} 
+                    handleInputChange={handleInputChange} 
+                    setCurrentTrade={setCurrentTrade}
+                    allTrades={trades} 
+                  />
+                </>
               )}
               {activeTab === 'exit' && (
                 <ExitTabContent 

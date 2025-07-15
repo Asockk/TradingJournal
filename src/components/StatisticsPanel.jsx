@@ -9,6 +9,7 @@ import PositionSizeOptimizationPanel from './stats/PositionSizeOptimizationPanel
 import { calculateExpectedValuePerformance, calculateRMultiplePerformance } from '../utils/expectedValueStats';
 import { calculateStats } from '../utils/statsCalculations';
 import { ArrowLeft } from 'lucide-react';
+import ReflectionInsights from './insights/ReflectionInsights';
 // Import memoized charts
 import {
   EquityChart,
@@ -359,6 +360,11 @@ const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
         
         {/* Emotion Transition Chart */}
         <EmotionTransitionChart transitionData={safeStats.emotionTransitions} />
+      </ChartWrapper>
+      
+      {/* Reflection Insights */}
+      <ChartWrapper>
+        <ReflectionInsights trades={timeFilteredTrades} />
       </ChartWrapper>
       
       {/* Alpha Trader Charts */}
