@@ -1,6 +1,6 @@
 // src/components/form/EntryTabContent.jsx
-import React from 'react';
-import { getFieldStyle } from '../../utils/formUtils';
+import React, { useState, useEffect } from 'react';
+import { getFieldStyle, validatePriceLevels } from '../../utils/formUtils';
 import EmotionSelector from './EmotionSelector';
 import FavoriteButton from '../favorites/FavoriteButton';
 import FavoritesSelector from '../favorites/FavoritesSelector';
@@ -13,6 +13,19 @@ const EntryTabContent = ({
   setCurrentTrade,
   allTrades = []
 }) => {
+  const [validationErrors, setValidationErrors] = useState({});
+  
+  // Validate price levels whenever they change
+  useEffect(() => {
+    const errors = validatePriceLevels(
+      currentTrade.position,
+      currentTrade.entryPrice,
+      currentTrade.stopLoss,
+      currentTrade.takeProfit
+    );
+    setValidationErrors(errors);
+  }, [currentTrade.position, currentTrade.entryPrice, currentTrade.stopLoss, currentTrade.takeProfit]);
+  
   // Handle favorit selection
   const handleSelectFavorite = (fieldName, value) => {
     setCurrentTrade(prev => ({
@@ -290,19 +303,22 @@ const EntryTabContent = ({
               step="0.000001"
               value={currentTrade.stopLoss}
               onChange={handleInputChange}
-              className={getFieldStyle('stopLoss', currentTrade)}
+              className={`${getFieldStyle('stopLoss', currentTrade)} ${validationErrors.stopLoss ? 'border-red-500' : ''}`}
             />
-            {currentTrade.position === 'Long' && (
+            {currentTrade.position === 'Long' && !validationErrors.stopLoss && (
               <div className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition bg-red-50 text-red-500 text-xs px-1 py-0.5 rounded">
                 Unter Entry
               </div>
             )}
-            {currentTrade.position === 'Short' && (
+            {currentTrade.position === 'Short' && !validationErrors.stopLoss && (
               <div className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition bg-red-50 text-red-500 text-xs px-1 py-0.5 rounded">
                 Über Entry
               </div>
             )}
           </div>
+          {validationErrors.stopLoss && (
+            <p className="mt-1 text-xs text-red-600">{validationErrors.stopLoss}</p>
+          )}
         </div>
         
         <div>
@@ -316,19 +332,22 @@ const EntryTabContent = ({
               step="0.000001"
               value={currentTrade.takeProfit}
               onChange={handleInputChange}
-              className={getFieldStyle('takeProfit', currentTrade)}
+              className={`${getFieldStyle('takeProfit', currentTrade)} ${validationErrors.takeProfit ? 'border-red-500' : ''}`}
             />
-            {currentTrade.position === 'Long' && (
+            {currentTrade.position === 'Long' && !validationErrors.takeProfit && (
               <div className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition bg-green-50 text-green-500 text-xs px-1 py-0.5 rounded">
                 Über Entry
               </div>
             )}
-            {currentTrade.position === 'Short' && (
+            {currentTrade.position === 'Short' && !validationErrors.takeProfit && (
               <div className="absolute right-2 top-1/2 transform -translate-y-1/2 opacity-0 group-hover:opacity-100 transition bg-green-50 text-green-500 text-xs px-1 py-0.5 rounded">
                 Unter Entry
               </div>
             )}
           </div>
+          {validationErrors.takeProfit && (
+            <p className="mt-1 text-xs text-red-600">{validationErrors.takeProfit}</p>
+          )}
         </div>
         
         {/* Win Probability Input - Now passing the expectedValue */}

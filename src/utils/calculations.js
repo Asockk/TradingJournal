@@ -3,6 +3,8 @@
  * This file replaces the existing src/utils/calculations.js
  */
 
+import { roundTo, formatNumber, safeMultiply, safeDivide, safeSubtract, parseNumeric } from './precisionUtils';
+
 /**
  * Calculate the duration in days between two dates
  * @param {string} entryDate - Entry date string
@@ -37,7 +39,8 @@ export const calculateExpectedPnL = (entryPrice, takeProfit, positionSize, posit
   }
   
   const direction = position === 'Long' ? 1 : -1;
-  const expectedPnL = ((tp - entry) / entry * size * direction * lev).toFixed(2);
+  const priceChange = safeDivide(tp - entry, entry, 6);
+  const expectedPnL = formatNumber(priceChange * size * direction * lev);
   
   return expectedPnL;
 };
@@ -70,7 +73,7 @@ export const calculateEntryRiskReward = (entryPrice, takeProfit, stopLoss, posit
     risk = Math.abs(sl - entry);
   }
   
-  if (risk === 0) return "0.00";
+  if (risk === 0) return "∞";
   
   const rrRatio = (reward / risk).toFixed(2);
   return rrRatio;
@@ -98,7 +101,9 @@ export const calculatePnL = (entryPrice, exitPrice, positionSize, position, leve
   }
   
   const direction = position === 'Long' ? 1 : -1;
-  const pnl = ((exit - entry) / entry * size * direction * lev - tradeFees).toFixed(2);
+  const priceChange = safeDivide(exit - entry, entry, 6);
+  const grossPnl = safeMultiply(priceChange * size * direction, lev, 4);
+  const pnl = formatNumber(grossPnl - tradeFees);
   
   return pnl;
 };
@@ -140,7 +145,7 @@ export const calculateActualRiskReward = (
     risk = Math.abs(sl - entry) / entry * size * lev;
   }
   
-  if (risk === 0) return "0.00";
+  if (risk === 0) return actualPnl > 0 ? "∞" : "0.00";
   
   const actualRR = (actualPnl / Math.abs(risk)).toFixed(2);
   return actualRR;
@@ -201,6 +206,7 @@ export const calculatePotentialLoss = (entryPrice, stopLoss, positionSize, posit
  * @param {string} position - "Long" or "Short"
  * @param {string|number} leverage - Leverage factor
  * @param {string|number} winProbability - Win probability percentage (1-99)
+ * @param {string|number} fees - Trading fees (optional)
  * @returns {string} - Expected value formatted to 2 decimal places
  */
 export const calculateExpectedValue = (
@@ -210,19 +216,21 @@ export const calculateExpectedValue = (
   positionSize, 
   position, 
   leverage, 
-  winProbability
+  winProbability,
+  fees = 0
 ) => {
   const winProb = parseFloat(winProbability) / 100; // Convert percentage to decimal
+  const tradeFees = parseFloat(fees || 0);
   
   if (isNaN(winProb)) {
     return "0.00";
   }
   
-  // Calculate potential gain at take profit
-  const potentialGain = calculatePotentialGain(entryPrice, takeProfit, positionSize, position, leverage);
+  // Calculate potential gain at take profit (minus fees)
+  const potentialGain = calculatePotentialGain(entryPrice, takeProfit, positionSize, position, leverage) - tradeFees;
   
-  // Calculate potential loss at stop loss
-  const potentialLoss = calculatePotentialLoss(entryPrice, stopLoss, positionSize, position, leverage);
+  // Calculate potential loss at stop loss (plus fees, since fees add to the loss)
+  const potentialLoss = calculatePotentialLoss(entryPrice, stopLoss, positionSize, position, leverage) - tradeFees;
   
   // Calculate expected value
   const expectedValue = (winProb * potentialGain) + ((1 - winProb) * potentialLoss);

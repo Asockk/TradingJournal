@@ -228,7 +228,7 @@ export const calculateProfitFactor = (trades) => {
     .filter(trade => parseFloat(trade.pnl || 0) < 0)
     .reduce((sum, trade) => sum + Math.abs(parseFloat(trade.pnl || 0)), 0);
   
-  if (losses === 0) return profits > 0 ? Infinity : 0;
+  if (losses === 0) return profits > 0 ? 999.99 : 0;
   
   return profits / losses;
 };
@@ -252,8 +252,14 @@ export const calculateSharpeRatio = (trades, riskFreeRate = 0.01) => {
   const variance = returns.reduce((sum, value) => sum + Math.pow(value - avgReturn, 2), 0) / (returns.length - 1);
   const stdDev = Math.sqrt(variance);
   
-  // Assuming we make 300 trades a year (rough estimate)
-  const annualizationFactor = Math.sqrt(Math.min(trades.length * (365 / trades.length), 300));
+  // Calculate trading days based on date range
+  const firstTradeDate = new Date(Math.min(...trades.map(t => new Date(t.entryDate))));
+  const lastTradeDate = new Date(Math.max(...trades.map(t => new Date(t.entryDate))));
+  const daysDiff = Math.max(1, (lastTradeDate - firstTradeDate) / (1000 * 60 * 60 * 24));
+  
+  // Annualize based on 252 trading days per year
+  const tradesPerYear = (trades.length / daysDiff) * 252;
+  const annualizationFactor = Math.sqrt(Math.max(1, tradesPerYear));
   
   if (stdDev === 0) return 0;
   
@@ -279,13 +285,19 @@ export const calculateSortinoRatio = (trades, riskFreeRate = 0.01) => {
   // Calculate downside deviation (only negative returns)
   const negativeReturns = returns.filter(value => value < 0);
   
-  if (negativeReturns.length === 0) return avgReturn > 0 ? Infinity : 0;
+  if (negativeReturns.length === 0) return avgReturn > 0 ? 999.99 : 0;
   
   const downsideVariance = negativeReturns.reduce((sum, value) => sum + Math.pow(value, 2), 0) / negativeReturns.length;
   const downsideDeviation = Math.sqrt(downsideVariance);
   
-  // Assuming we make 300 trades a year (rough estimate)
-  const annualizationFactor = Math.sqrt(Math.min(trades.length * (365 / trades.length), 300));
+  // Calculate trading days based on date range
+  const firstTradeDate = new Date(Math.min(...trades.map(t => new Date(t.entryDate))));
+  const lastTradeDate = new Date(Math.max(...trades.map(t => new Date(t.entryDate))));
+  const daysDiff = Math.max(1, (lastTradeDate - firstTradeDate) / (1000 * 60 * 60 * 24));
+  
+  // Annualize based on 252 trading days per year
+  const tradesPerYear = (trades.length / daysDiff) * 252;
+  const annualizationFactor = Math.sqrt(Math.max(1, tradesPerYear));
   
   // Calculate Sortino ratio
   return (avgReturn - riskFreeRate) / downsideDeviation * annualizationFactor;

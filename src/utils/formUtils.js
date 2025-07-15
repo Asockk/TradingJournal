@@ -37,6 +37,32 @@ export const getFieldStyle = (fieldName, currentTrade, isRequired = false, isCal
   return className;
 };
 
+// Validate Stop Loss and Take Profit based on position
+export const validatePriceLevels = (position, entryPrice, stopLoss, takeProfit) => {
+  const errors = {};
+  const entry = parseFloat(entryPrice);
+  const sl = parseFloat(stopLoss);
+  const tp = parseFloat(takeProfit);
+
+  if (entryPrice && stopLoss && !isNaN(entry) && !isNaN(sl)) {
+    if (position === 'Long' && sl >= entry) {
+      errors.stopLoss = 'Stop Loss muss unter dem Einstiegskurs liegen (Long Position)';
+    } else if (position === 'Short' && sl <= entry) {
+      errors.stopLoss = 'Stop Loss muss über dem Einstiegskurs liegen (Short Position)';
+    }
+  }
+
+  if (entryPrice && takeProfit && !isNaN(entry) && !isNaN(tp)) {
+    if (position === 'Long' && tp <= entry) {
+      errors.takeProfit = 'Take Profit muss über dem Einstiegskurs liegen (Long Position)';
+    } else if (position === 'Short' && tp >= entry) {
+      errors.takeProfit = 'Take Profit muss unter dem Einstiegskurs liegen (Short Position)';
+    }
+  }
+
+  return errors;
+};
+
 // Function to create an emotion button component
 export const EmotionButton = ({ value, currentValue, onClick, emoji, label, colorClass }) => (
   <button 

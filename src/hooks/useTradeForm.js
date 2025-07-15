@@ -241,7 +241,8 @@ export const useTradeForm = (initialTrade, onSubmit, onClose, isEditing) => {
         currentTrade.positionSize,
         currentTrade.position,
         currentTrade.leverage,
-        winProb
+        winProb,
+        currentTrade.fees || 0
       );
       
       if (newTrade.expectedValue !== expectedValue) {
