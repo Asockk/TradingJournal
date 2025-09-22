@@ -19,7 +19,10 @@ export const calculateHourlyPerformance = (trades) => {
 
   // Process trades
   trades.forEach(trade => {
-    if (!trade.entryTime || !trade.pnl) return;
+    if (!trade.entryTime) return;
+
+    const pnl = parseFloat(trade.pnl);
+    if (isNaN(pnl)) return;
     
     // Extract hour from entry time (format like "14:30" or "9:45")
     const hourPart = trade.entryTime.split(':')[0];
@@ -27,7 +30,6 @@ export const calculateHourlyPerformance = (trades) => {
     
     if (isNaN(hour) || hour < 0 || hour > 23) return;
     
-    const pnl = parseFloat(trade.pnl);
     const isWin = pnl > 0;
     
     // Update hour data

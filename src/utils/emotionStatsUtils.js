@@ -25,12 +25,13 @@ export const calculateEmotionPerformance = (trades) => {
 
   // Process trades
   trades.forEach(trade => {
-    if (!trade.preTradeEmotion || !trade.pnl) return;
+    if (trade.preTradeEmotion == null || trade.preTradeEmotion === '') return;
+    const pnl = parseFloat(trade.pnl);
+    if (isNaN(pnl)) return;
     
     const emotion = parseInt(trade.preTradeEmotion, 10);
     if (isNaN(emotion) || emotion < 1 || emotion > 5) return;
     
-    const pnl = parseFloat(trade.pnl);
     const isWin = pnl > 0;
     
     // Update emotion data (using 0-based index)
@@ -65,9 +66,9 @@ export const calculateEmotionTransitions = (trades) => {
   // Create a map for transitions
   const transitions = {};
   const validTrades = trades.filter(trade => 
-    trade.preTradeEmotion && 
-    trade.postTradeEmotion && 
-    trade.pnl
+    trade.preTradeEmotion != null && trade.preTradeEmotion !== '' &&
+    trade.postTradeEmotion != null && trade.postTradeEmotion !== '' &&
+    !isNaN(parseFloat(trade.pnl))
   );
   
   validTrades.forEach(trade => {
@@ -80,6 +81,7 @@ export const calculateEmotionTransitions = (trades) => {
     
     const transitionKey = `${preEmotion}-${postEmotion}`;
     const pnl = parseFloat(trade.pnl);
+    if (isNaN(pnl)) return;
     const isWin = pnl > 0;
     
     if (!transitions[transitionKey]) {

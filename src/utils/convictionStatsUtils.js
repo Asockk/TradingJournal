@@ -21,12 +21,13 @@ export const calculateConvictionPerformance = (trades) => {
 
   // Process trades
   trades.forEach(trade => {
-    if (!trade.conviction || !trade.pnl) return;
+    if (trade.conviction == null || trade.conviction === '') return;
+    const pnl = parseFloat(trade.pnl);
+    if (isNaN(pnl)) return;
     
     const conviction = parseInt(trade.conviction, 10);
     if (isNaN(conviction) || conviction < 1 || conviction > 5) return;
     
-    const pnl = parseFloat(trade.pnl);
     const isWin = pnl > 0;
     
     // Update conviction data (using 0-based index)

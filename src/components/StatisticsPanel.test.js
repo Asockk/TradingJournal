@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import StatisticsPanel from './StatisticsPanel';
 import { ThemeProvider } from '../contexts/ThemeContext';
 
@@ -56,8 +56,8 @@ describe('StatisticsPanel', () => {
     renderWithTheme(<StatisticsPanel {...defaultProps} />);
     
     // Check for key statistics
-    expect(screen.getByText(/Trades/i)).toBeInTheDocument();
-    expect(screen.getByText(/Winrate/i)).toBeInTheDocument();
+    expect(screen.getByText(/Trades & Winrate/i)).toBeInTheDocument();
+    expect(screen.getByText(/Durchschn\. Gewinn\/Verlust/i)).toBeInTheDocument();
     expect(screen.getByText(/Total P&L/i)).toBeInTheDocument();
   });
 
@@ -84,14 +84,14 @@ describe('StatisticsPanel', () => {
     expect(screen.getByText(/Alle Daten anzeigen/i)).toBeInTheDocument();
   });
 
-  test('applies time filters correctly', () => {
+  test('applies time filters correctly', async () => {
     renderWithTheme(<StatisticsPanel {...defaultProps} />);
     
-    // Click on 7 days filter
-    const sevenDaysButton = screen.getByText(/7 Tage/i);
-    sevenDaysButton.click();
+    const sevenDaysButton = screen.getByRole('button', { name: /7 Tage/i });
+    fireEvent.click(sevenDaysButton);
     
-    // Should update the active state
-    expect(sevenDaysButton.closest('button')).toHaveClass('bg-blue-600');
+    await waitFor(() => {
+      expect(sevenDaysButton).toHaveClass('bg-blue-600');
+    });
   });
 });

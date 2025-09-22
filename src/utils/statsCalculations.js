@@ -51,13 +51,18 @@ export const calculateStats = (filteredTrades) => {
     };
   }
 
+  const toNumber = (value) => {
+    const num = parseFloat(value);
+    return isNaN(num) ? 0 : num;
+  };
+
   // Basic metrics
   const profitTrades = filteredTrades.filter(trade => parseFloat(trade.pnl) > 0);
   const lossTrades = filteredTrades.filter(trade => parseFloat(trade.pnl) < 0);
   
-  const totalPnL = filteredTrades.reduce((sum, trade) => sum + parseFloat(trade.pnl || 0), 0);
+  const totalPnL = filteredTrades.reduce((sum, trade) => sum + toNumber(trade.pnl), 0);
   const avgPnL = totalPnL / filteredTrades.length;
-  
+
   // Risk/Reward metrics
   const riskRewardValues = filteredTrades
     .filter(trade => trade.actualRiskReward && !isNaN(parseFloat(trade.actualRiskReward)))
@@ -77,16 +82,16 @@ export const calculateStats = (filteredTrades) => {
   
   // Calculate average win and average loss
   const avgWin = profitTrades.length > 0 
-    ? profitTrades.reduce((sum, trade) => sum + parseFloat(trade.pnl || 0), 0) / profitTrades.length
+    ? profitTrades.reduce((sum, trade) => sum + toNumber(trade.pnl), 0) / profitTrades.length
     : 0;
   const avgLoss = lossTrades.length > 0
-    ? lossTrades.reduce((sum, trade) => sum + parseFloat(trade.pnl || 0), 0) / lossTrades.length
+    ? lossTrades.reduce((sum, trade) => sum + toNumber(trade.pnl), 0) / lossTrades.length
     : 0;
-  
+
   // Group by asset for performance calculation
   const assetPerformance = _.groupBy(filteredTrades, 'asset');
   const assetPnL = Object.entries(assetPerformance).map(([asset, trades]) => {
-    const totalPnL = trades.reduce((sum, trade) => sum + parseFloat(trade.pnl || 0), 0);
+    const totalPnL = trades.reduce((sum, trade) => sum + toNumber(trade.pnl), 0);
     const winRate = trades.filter(trade => parseFloat(trade.pnl) > 0).length / trades.length * 100;
     return { asset, totalPnL, winRate, tradeCount: trades.length };
   }).sort((a, b) => b.totalPnL - a.totalPnL);
@@ -94,14 +99,19 @@ export const calculateStats = (filteredTrades) => {
   // Calculate drawdown
   const cumulativePnL = [];
   let runningTotal = 0;
-  let maxSoFar = 0;
+  let peakValue = null;
+  let baseline = null;
   let maxDrawdown = 0;
   
   filteredTrades
     .sort((a, b) => new Date(a.entryDate) - new Date(b.entryDate))
     .forEach(trade => {
-      const pnl = parseFloat(trade.pnl || 0);
+      const pnl = toNumber(trade.pnl);
       runningTotal += pnl;
+
+      if (baseline === null && runningTotal !== 0) {
+        baseline = Math.abs(runningTotal);
+      }
       
       cumulativePnL.push({
         date: trade.exitDate,
@@ -109,11 +119,18 @@ export const calculateStats = (filteredTrades) => {
         trade: trade.asset
       });
       
-      if (runningTotal > maxSoFar) {
-        maxSoFar = runningTotal;
-      } else if (maxSoFar > 0) {
-        // Only calculate drawdown when we have a positive peak
-        const currentDrawdown = ((maxSoFar - runningTotal) / maxSoFar) * 100;
+      if (peakValue === null || runningTotal > peakValue) {
+        peakValue = runningTotal;
+      } else {
+        let currentDrawdown = 0;
+        if (peakValue !== null && peakValue !== 0) {
+          const denominator = Math.abs(peakValue);
+          currentDrawdown = ((peakValue - runningTotal) / denominator) * 100;
+        } else if (baseline) {
+          const diff = Math.max(0, Math.abs(runningTotal) - baseline);
+          currentDrawdown = (diff / baseline) * 100;
+        }
+
         if (currentDrawdown > maxDrawdown) {
           maxDrawdown = currentDrawdown;
         }
@@ -291,17 +308,22 @@ export const calculateProfitFactor = (trades) => {
  * @returns {number} - Sharpe ratio
  */
 export const calculateSharpeRatio = (trades, riskFreeRate = 0.01) => {
-  if (trades.length < 2) return 0;
+  const tradeReturns = trades
+    .map(trade => {
+      const pnl = parseFloat(trade.pnl);
+      if (isNaN(pnl)) return null;
+      const positionSize = Math.abs(parseFloat(trade.positionSize));
+      const denominator = !isNaN(positionSize) && positionSize > 0 ? positionSize : 1;
+      return pnl / denominator;
+    })
+    .filter(value => value !== null);
+
+  if (tradeReturns.length < 2) return 0;
   
-  // Extract PnL values
-  const returns = trades.map(trade => parseFloat(trade.pnl || 0));
-  
-  // Calculate average return
-  const avgReturn = returns.reduce((sum, value) => sum + value, 0) / returns.length;
-  
-  // Calculate standard deviation of returns
-  const variance = returns.reduce((sum, value) => sum + Math.pow(value - avgReturn, 2), 0) / (returns.length - 1);
+  const avgReturn = tradeReturns.reduce((sum, value) => sum + value, 0) / tradeReturns.length;
+  const variance = tradeReturns.reduce((sum, value) => sum + Math.pow(value - avgReturn, 2), 0) / (tradeReturns.length - 1);
   const stdDev = Math.sqrt(variance);
+  if (stdDev === 0) return 0;
   
   // Calculate trading days based on date range
   const firstTradeDate = new Date(Math.min(...trades.map(t => new Date(t.entryDate))));
@@ -311,14 +333,11 @@ export const calculateSharpeRatio = (trades, riskFreeRate = 0.01) => {
   // Annualize based on 252 trading days per year
   const tradesPerYear = (trades.length / daysDiff) * 252;
   const annualizationFactor = Math.sqrt(Math.max(1, tradesPerYear));
-  
-  if (stdDev === 0) return 0;
-  
-  // Calculate Sharpe ratio with proper return compounding
-  // For proper annualization, we should compound returns, not multiply linearly
   const periodsPerYear = 252 / Math.max(1, daysDiff);
-  const annualizedReturn = Math.pow(1 + avgReturn, periodsPerYear) - 1;
+  const compoundedBase = 1 + avgReturn;
+  const annualizedReturn = compoundedBase > 0 ? Math.pow(compoundedBase, periodsPerYear) - 1 : -1;
   const annualizedStdDev = stdDev * annualizationFactor;
+  if (annualizedStdDev === 0) return 0;
   const annualizedRiskFreeRate = riskFreeRate; // Already annual
   
   return (annualizedReturn - annualizedRiskFreeRate) / annualizedStdDev;
@@ -331,23 +350,25 @@ export const calculateSharpeRatio = (trades, riskFreeRate = 0.01) => {
  * @returns {number} - Sortino ratio
  */
 export const calculateSortinoRatio = (trades, riskFreeRate = 0.01) => {
-  if (trades.length < 2) return 0;
+  const tradeReturns = trades
+    .map(trade => {
+      const pnl = parseFloat(trade.pnl);
+      if (isNaN(pnl)) return null;
+      const positionSize = Math.abs(parseFloat(trade.positionSize));
+      const denominator = !isNaN(positionSize) && positionSize > 0 ? positionSize : 1;
+      return pnl / denominator;
+    })
+    .filter(value => value !== null);
+
+  if (tradeReturns.length < 2) return 0;
   
-  // Extract PnL values
-  const returns = trades.map(trade => parseFloat(trade.pnl || 0));
-  
-  // Calculate average return
-  const avgReturn = returns.reduce((sum, value) => sum + value, 0) / returns.length;
-  
-  // Calculate downside deviation (returns below MAR - Minimum Acceptable Return)
-  const MAR = 0; // Minimum Acceptable Return, typically 0
-  const downsideReturns = returns.map(value => Math.min(0, value - MAR));
-  const squaredDownsideReturns = downsideReturns.filter(value => value < 0);
-  
-  if (squaredDownsideReturns.length === 0) return avgReturn > 0 ? 999.99 : 0;
-  
-  const downsideVariance = squaredDownsideReturns.reduce((sum, value) => sum + Math.pow(value, 2), 0) / returns.length;
+  const avgReturn = tradeReturns.reduce((sum, value) => sum + value, 0) / tradeReturns.length;
+  const MAR = 0;
+  const downsideReturns = tradeReturns.filter(value => value < MAR);
+  if (downsideReturns.length === 0) return avgReturn > 0 ? 999.99 : 0;
+  const downsideVariance = downsideReturns.reduce((sum, value) => sum + Math.pow(value - MAR, 2), 0) / tradeReturns.length;
   const downsideDeviation = Math.sqrt(downsideVariance);
+  if (downsideDeviation === 0) return avgReturn > 0 ? 999.99 : 0;
   
   // Calculate trading days based on date range
   const firstTradeDate = new Date(Math.min(...trades.map(t => new Date(t.entryDate))));
@@ -357,10 +378,9 @@ export const calculateSortinoRatio = (trades, riskFreeRate = 0.01) => {
   // Annualize based on 252 trading days per year
   const tradesPerYear = (trades.length / daysDiff) * 252;
   const annualizationFactor = Math.sqrt(Math.max(1, tradesPerYear));
-  
-  // Calculate Sortino ratio with proper return compounding
   const periodsPerYear = 252 / Math.max(1, daysDiff);
-  const annualizedReturn = Math.pow(1 + avgReturn, periodsPerYear) - 1;
+  const compoundedBase = 1 + avgReturn;
+  const annualizedReturn = compoundedBase > 0 ? Math.pow(compoundedBase, periodsPerYear) - 1 : -1;
   const annualizedDownsideDeviation = downsideDeviation * annualizationFactor;
   const annualizedRiskFreeRate = riskFreeRate; // Already annual
   

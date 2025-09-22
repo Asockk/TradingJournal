@@ -17,9 +17,9 @@ const StatisticsCards = ({ stats, currency }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
       <StatisticCard 
-        title="Trefferquote"
+        title="Trades & Winrate"
         value={`${stats.winRate.toFixed(1)}%`}
-        subValue={`${Math.round(stats.tradeCount * stats.winRate / 100)} von ${stats.tradeCount} Trades`}
+        subValue={`Trades: ${Math.round(stats.tradeCount * stats.winRate / 100)} von ${stats.tradeCount}`}
       />
       
       <StatisticCard 
@@ -36,7 +36,7 @@ const StatisticsCards = ({ stats, currency }) => {
       />
       
       <StatisticCard 
-        title="Total PnL"
+        title="Total P&L"
         value={`${stats.totalPnL > 0 ? '+' : ''}${stats.totalPnL.toFixed(2)} ${currency}`}
         subValue={`Max Drawdown: ${stats.maxDrawdown.toFixed(1)}%`}
         valueClass={stats.totalPnL > 0 ? 'text-green-600' : 'text-red-600'}

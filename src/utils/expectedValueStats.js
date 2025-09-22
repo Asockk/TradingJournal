@@ -10,14 +10,12 @@
  */
 export const calculateExpectedValuePerformance = (trades) => {
   // Filter trades that have both EV data and completed execution (with PnL)
-  const tradesWithEV = trades.filter(trade => 
-    trade.expectedValue && 
-    trade.winProbability && 
-    trade.pnl && 
-    !isNaN(parseFloat(trade.expectedValue)) && 
-    !isNaN(parseFloat(trade.winProbability)) &&
-    !isNaN(parseFloat(trade.pnl))
-  );
+  const tradesWithEV = trades.filter(trade => {
+    const expectedValue = parseFloat(trade.expectedValue);
+    const winProb = parseFloat(trade.winProbability);
+    const pnl = parseFloat(trade.pnl);
+    return !isNaN(expectedValue) && !isNaN(winProb) && !isNaN(pnl);
+  });
   
   // FIX: Allow even 1 trade to display statistics (removed minimum threshold)
   if (tradesWithEV.length === 0) {
@@ -109,12 +107,11 @@ export const calculateExpectedValuePerformance = (trades) => {
  */
 export const calculateRMultiplePerformance = (trades) => {
   // Filter trades with R-Multiple data
-  const tradesWithR = trades.filter(trade => 
-    trade.rMultiple && 
-    trade.pnl && 
-    !isNaN(parseFloat(trade.rMultiple)) &&
-    !isNaN(parseFloat(trade.pnl))
-  );
+  const tradesWithR = trades.filter(trade => {
+    const rMultiple = parseFloat(trade.rMultiple);
+    const pnl = parseFloat(trade.pnl);
+    return !isNaN(rMultiple) && !isNaN(pnl);
+  });
   
   // FIX: Allow even 1 trade to display statistics (removed minimum threshold)
   if (tradesWithR.length === 0) {

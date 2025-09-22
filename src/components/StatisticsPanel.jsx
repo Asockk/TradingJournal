@@ -92,41 +92,46 @@ const ChartWrapper = ({ children, mdCols = 1 }) => (
 );
 
 const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
-  console.log("StatisticsPanel wird gerendert - KORRIGIERTE VERSION");
-  
   // Zeitraum-Auswahl (Standard: "All")
   const [timeRange, setTimeRange] = useState('all');
   const [prevStats, setPrevStats] = useState(null);
-  const [hasNoData, setHasNoData] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   
-  // Debug-Logging für Zeitraum-Änderungen
-  useEffect(() => {
-    console.log("Zeitraum geändert:", timeRange);
-  }, [timeRange]);
   
+  const latestTradeDate = React.useMemo(() => {
+    let latest = null;
+    filteredTrades.forEach(trade => {
+      if (!trade.entryDate) return;
+      const entry = new Date(trade.entryDate);
+      if (isNaN(entry)) return;
+      if (!latest || entry > latest) {
+        latest = entry;
+      }
+    });
+    return latest;
+  }, [filteredTrades]);
+
   // Berechne gefilterte Trades basierend auf Zeitraum
   const timeFilteredTrades = React.useMemo(() => {
     if (timeRange === 'all') return filteredTrades;
     
-    const now = new Date();
+    const referenceDate = latestTradeDate ? new Date(latestTradeDate.getTime()) : new Date();
     let startDate;
     
     switch (timeRange) {
       case '7d':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 7);
+        startDate = new Date(referenceDate);
+        startDate.setDate(referenceDate.getDate() - 7);
         break;
       case '30d':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 30);
+        startDate = new Date(referenceDate);
+        startDate.setDate(referenceDate.getDate() - 30);
         break;
       case '90d':
-        startDate = new Date(now);
-        startDate.setDate(now.getDate() - 90);
+        startDate = new Date(referenceDate);
+        startDate.setDate(referenceDate.getDate() - 90);
         break;
       case 'ytd':
-        startDate = new Date(now.getFullYear(), 0, 1);
+        startDate = new Date(referenceDate.getFullYear(), 0, 1);
         break;
       default:
         return filteredTrades;
@@ -139,19 +144,11 @@ const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
 
   // Calculate statistics
   const stats = React.useMemo(() => {
-    setIsLoading(true);
-    
     if (!timeFilteredTrades.length) {
-      setHasNoData(true);
-      setIsLoading(false);
       return null;
     }
-    
-    setHasNoData(false);
-    const calculatedStats = calculateStats(timeFilteredTrades);
-    setIsLoading(false);
-    console.log("Berechnete Statistiken:", calculatedStats ? "Verfügbar" : "Nicht verfügbar");
-    return calculatedStats;
+
+    return calculateStats(timeFilteredTrades);
   }, [timeFilteredTrades]);
 
   // Expected Value Analyse
@@ -172,32 +169,35 @@ const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
       return;
     }
     
-    const now = new Date();
+    const reference = latestTradeDate ? new Date(latestTradeDate.getTime()) : new Date();
     let currentPeriodStart, previousPeriodStart, previousPeriodEnd;
     
     switch (timeRange) {
       case '7d':
-        currentPeriodStart = new Date(now);
-        currentPeriodStart.setDate(now.getDate() - 7);
-        previousPeriodStart = new Date(currentPeriodStart);
-        previousPeriodStart.setDate(currentPeriodStart.getDate() - 7);
+        currentPeriodStart = new Date(reference);
+        currentPeriodStart.setDate(reference.getDate() - 7);
+        previousPeriodEnd = new Date(currentPeriodStart);
+        previousPeriodStart = new Date(previousPeriodEnd);
+        previousPeriodStart.setDate(previousPeriodStart.getDate() - 7);
         break;
       case '30d':
-        currentPeriodStart = new Date(now);
-        currentPeriodStart.setDate(now.getDate() - 30);
-        previousPeriodStart = new Date(currentPeriodStart);
-        previousPeriodStart.setDate(currentPeriodStart.getDate() - 30);
+        currentPeriodStart = new Date(reference);
+        currentPeriodStart.setDate(reference.getDate() - 30);
+        previousPeriodEnd = new Date(currentPeriodStart);
+        previousPeriodStart = new Date(previousPeriodEnd);
+        previousPeriodStart.setDate(previousPeriodStart.getDate() - 30);
         break;
       case '90d':
-        currentPeriodStart = new Date(now);
-        currentPeriodStart.setDate(now.getDate() - 90);
-        previousPeriodStart = new Date(currentPeriodStart);
-        previousPeriodStart.setDate(currentPeriodStart.getDate() - 90);
+        currentPeriodStart = new Date(reference);
+        currentPeriodStart.setDate(reference.getDate() - 90);
+        previousPeriodEnd = new Date(currentPeriodStart);
+        previousPeriodStart = new Date(previousPeriodEnd);
+        previousPeriodStart.setDate(previousPeriodStart.getDate() - 90);
         break;
       case 'ytd':
-        currentPeriodStart = new Date(now.getFullYear(), 0, 1);
-        previousPeriodStart = new Date(now.getFullYear() - 1, 0, 1);
-        previousPeriodEnd = new Date(now.getFullYear() - 1, 11, 31);
+        currentPeriodStart = new Date(reference.getFullYear(), 0, 1);
+        previousPeriodStart = new Date(reference.getFullYear() - 1, 0, 1);
+        previousPeriodEnd = new Date(reference.getFullYear() - 1, 11, 31);
         break;
       default:
         setPrevStats(null);
@@ -207,13 +207,12 @@ const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
     // Filtere Trades für die Vorperiode
     const previousPeriodTrades = filteredTrades.filter(trade => {
       const tradeDate = new Date(trade.entryDate);
+      if (isNaN(tradeDate)) return false;
       
-      // Für "ytd" verwenden wir das ganze Vorjahr
       if (timeRange === 'ytd') {
         return tradeDate >= previousPeriodStart && tradeDate <= previousPeriodEnd;
       }
       
-      // Für andere Zeiträume verwenden wir den gleichen Zeitraum vor der aktuellen Periode
       return tradeDate >= previousPeriodStart && tradeDate < currentPeriodStart;
     });
     
@@ -223,19 +222,9 @@ const StatisticsPanel = ({ trades, filters, filteredTrades }) => {
     } else {
       setPrevStats(null);
     }
-  }, [timeRange, filteredTrades]);
+  }, [timeRange, filteredTrades, latestTradeDate]);
 
-  if (isLoading) {
-    return (
-      <Card className="bg-white p-8 text-center text-gray-500 rounded-lg shadow">
-        <CardContent>
-          <p className="text-xl">Berechne Statistiken...</p>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!stats && hasNoData) {
+  if (!stats && !timeFilteredTrades.length) {
     return <NoDataView onReset={() => setTimeRange('all')} />;
   }
 

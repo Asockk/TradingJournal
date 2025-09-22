@@ -175,7 +175,12 @@ export const useTradeForm = (initialTrade, onSubmit, onClose, isEditing) => {
     
     // Calculate duration if we have both dates
     if (currentTrade.entryDate && currentTrade.exitDate) {
-      const duration = calculateDuration(currentTrade.entryDate, currentTrade.exitDate);
+      const duration = calculateDuration(
+        currentTrade.entryDate,
+        currentTrade.exitDate,
+        currentTrade.entryTime,
+        currentTrade.exitTime
+      );
       if (newTrade.duration !== duration) {
         newTrade.duration = duration;
         hasChanges = true;

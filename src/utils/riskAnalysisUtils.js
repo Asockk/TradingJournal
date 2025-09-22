@@ -159,15 +159,20 @@ export const calculateRiskRewardComparison = (trades) => {
  * @returns {Object} - Adherence data
  */
 export const calculateStopLossAdherence = (trades) => {
-  // Filter trades with defined stop loss and exit price
-  const tradesWithStopLoss = trades.filter(trade => 
-    trade.stopLoss && 
-    trade.exitPrice && 
-    !isNaN(parseFloat(trade.stopLoss)) && 
-    !isNaN(parseFloat(trade.exitPrice))
-  );
+  const toNumber = (value) => {
+    const num = parseFloat(value);
+    return isNaN(num) ? null : num;
+  };
+
+  // Consider only losing trades with usable stop/exit values
+  const losingTrades = trades.filter(trade => {
+    const stopLoss = toNumber(trade.stopLoss);
+    const exitPrice = toNumber(trade.exitPrice);
+    const pnl = toNumber(trade.pnl);
+    return stopLoss !== null && exitPrice !== null && pnl !== null && pnl < 0;
+  });
   
-  if (tradesWithStopLoss.length === 0) {
+  if (losingTrades.length === 0) {
     return {
       data: [],
       insights: {
@@ -180,22 +185,22 @@ export const calculateStopLossAdherence = (trades) => {
     };
   }
   
-  // Categorize trades
   const categories = {
     respected: [], // Exit at or near stop loss
     partiallyRespected: [], // Exit worse than stop loss but not drastically
     ignored: [] // Exit significantly worse than stop loss
   };
   
-  tradesWithStopLoss.forEach(trade => {
-    const stopLoss = parseFloat(trade.stopLoss);
-    const entryPrice = parseFloat(trade.entryPrice);
-    const exitPrice = parseFloat(trade.exitPrice);
-    const pnl = parseFloat(trade.pnl || 0);
+  losingTrades.forEach(trade => {
+    const stopLoss = toNumber(trade.stopLoss);
+    const entryPrice = toNumber(trade.entryPrice);
+    const exitPrice = toNumber(trade.exitPrice);
+    const pnl = toNumber(trade.pnl) || 0;
     const position = trade.position; // Long or Short
     
-    // Skip if no exit price (trade still open)
-    if (!exitPrice || isNaN(exitPrice)) return;
+    if (entryPrice === null || exitPrice === null || stopLoss === null) {
+      return;
+    }
     
     // Calculate how close the exit was to the stop loss
     // For long positions: stop loss is below entry
@@ -208,7 +213,11 @@ export const calculateStopLossAdherence = (trades) => {
       ? Math.abs(entryPrice - exitPrice) 
       : Math.abs(exitPrice - entryPrice);
     
-    const adherenceRatio = stopDistance > 0 ? exitDistance / stopDistance : 0;
+    if (stopDistance <= 0) {
+      return;
+    }
+
+    const adherenceRatio = exitDistance / stopDistance;
     
     const tradeData = {
       id: trade.id,
@@ -231,11 +240,7 @@ export const calculateStopLossAdherence = (trades) => {
     }
   });
   
-  // Count losing trades with stop loss
-  const losingTrades = tradesWithStopLoss.filter(trade => parseFloat(trade.pnl || 0) < 0);
-  
-  // Create data for pie chart
-  const totalLosingTrades = losingTrades.length || 1; // Avoid division by zero
+  const totalLosingTrades = losingTrades.length;
   const data = [
     {
       name: 'Respektiert',
@@ -259,11 +264,13 @@ export const calculateStopLossAdherence = (trades) => {
   
   // Generate insights
   let mainInsight = '';
-  let description = `Von ${totalLosingTrades} verlustbringenden Trades wurden ${categories.respected.length} (${(categories.respected.length / totalLosingTrades * 100).toFixed(1)}%) mit eingehaltenem Stop Loss beendet.`;
+  const respectedPercentage = (categories.respected.length / totalLosingTrades) * 100;
+  const ignoredPercentage = (categories.ignored.length / totalLosingTrades) * 100;
+  let description = `Von ${totalLosingTrades} verlustbringenden Trades wurden ${categories.respected.length} (${respectedPercentage.toFixed(1)}%) mit eingehaltenem Stop Loss beendet.`;
   
-  if (categories.ignored.length > 0.3 * totalLosingTrades) {
+  if (ignoredPercentage > 30) {
     mainInsight = 'Deine Stop Losses werden häufig ignoriert, was zu größeren Verlusten führen kann. Überlege, eine automatisierte Stop Loss-Strategie zu implementieren oder deine psychologische Disziplin zu verbessern.';
-  } else if (categories.respected.length > 0.7 * totalLosingTrades) {
+  } else if (respectedPercentage > 70) {
     mainInsight = 'Du hältst deine Stop Losses gut ein, was auf eine starke Risikodisziplin hindeutet. Fokussiere dich nun darauf, deine Gewinner länger laufen zu lassen.';
   } else {
     mainInsight = 'Verbessere deine Stop Loss-Disziplin, indem du klare Regeln für das Auslösen von Stops definierst und stets einhältst.';
@@ -272,9 +279,9 @@ export const calculateStopLossAdherence = (trades) => {
   return {
     data,
     insights: {
-      respectedPercentage: (categories.respected.length / totalLosingTrades) * 100,
+      respectedPercentage,
       partialPercentage: (categories.partiallyRespected.length / totalLosingTrades) * 100,
-      ignoredPercentage: (categories.ignored.length / totalLosingTrades) * 100,
+      ignoredPercentage,
       description,
       mainInsight
     }
@@ -302,6 +309,11 @@ export const calculateDrawdownAnalysis = (trades) => {
   };
   
   // Sort trades by date
+  const toNumber = (value) => {
+    const num = parseFloat(value);
+    return isNaN(num) ? null : num;
+  };
+
   const sortedTrades = [...trades].sort((a, b) => 
     new Date(a.entryDate) - new Date(b.entryDate)
   );
@@ -309,15 +321,19 @@ export const calculateDrawdownAnalysis = (trades) => {
   // Create equity curve
   const equityCurve = [];
   let runningTotal = 0;
-  let peakValue = 0;
+  let peakValue = null;
+  let baseline = null;
   let inDrawdown = false;
   let currentDrawdown = null;
   const drawdowns = [];
   
-  sortedTrades.forEach((trade, index) => {
-    const pnl = parseFloat(trade.pnl || 0);
+  sortedTrades.forEach((trade) => {
+    const pnl = toNumber(trade.pnl) || 0;
     const date = trade.exitDate || trade.entryDate;
     runningTotal += pnl;
+    if (baseline === null && runningTotal !== 0) {
+      baseline = Math.abs(runningTotal);
+    }
     
     equityCurve.push({
       date,
@@ -327,7 +343,7 @@ export const calculateDrawdownAnalysis = (trades) => {
     });
     
     // Track drawdowns
-    if (runningTotal > peakValue) {
+    if (peakValue === null || runningTotal > peakValue) {
       // New equity peak
       peakValue = runningTotal;
       
@@ -348,9 +364,15 @@ export const calculateDrawdownAnalysis = (trades) => {
         inDrawdown = false;
         currentDrawdown = null;
       }
-    } else if (runningTotal < peakValue) {
-      const drawdownAmount = peakValue - runningTotal;
-      const drawdownPercentage = (drawdownAmount / peakValue) * 100;
+    } else {
+      const reference = peakValue !== null && peakValue !== 0
+        ? Math.abs(peakValue)
+        : baseline || Math.abs(runningTotal) || 1;
+      const drawdownAmount = peakValue !== null
+        ? peakValue - runningTotal
+        : Math.max(0, Math.abs(runningTotal) - (baseline || 0));
+      const normalizedDepth = Math.max(0, drawdownAmount);
+      const drawdownPercentage = reference > 0 ? (normalizedDepth / reference) * 100 : 0;
       
       if (!inDrawdown) {
         // Start of a new drawdown
@@ -361,7 +383,7 @@ export const calculateDrawdownAnalysis = (trades) => {
           peakValue,
           lowestPointDate: date,
           lowestValue: runningTotal,
-          depth: drawdownAmount,
+          depth: normalizedDepth,
           depthPercentage: drawdownPercentage,
           durationDays: 0,
           recoveryDays: 0,
@@ -372,8 +394,15 @@ export const calculateDrawdownAnalysis = (trades) => {
         if (runningTotal < currentDrawdown.lowestValue) {
           currentDrawdown.lowestValue = runningTotal;
           currentDrawdown.lowestPointDate = date;
-          currentDrawdown.depth = peakValue - runningTotal;
-          currentDrawdown.depthPercentage = (currentDrawdown.depth / peakValue) * 100;
+          currentDrawdown.depth = peakValue !== null
+            ? Math.max(0, peakValue - runningTotal)
+            : Math.max(0, Math.abs(runningTotal) - (baseline || 0));
+          const updateReference = peakValue !== null && peakValue !== 0
+            ? Math.abs(peakValue)
+            : baseline || Math.abs(runningTotal) || 1;
+          currentDrawdown.depthPercentage = updateReference > 0
+            ? (currentDrawdown.depth / updateReference) * 100
+            : 0;
         }
         
         // Update duration
@@ -417,7 +446,7 @@ export const calculateDrawdownAnalysis = (trades) => {
   // Calculate aggregate statistics
   const maxDrawdown = drawdowns.reduce((max, dd) => 
     dd.depthPercentage > max.depthPercentage ? dd : max, 
-    { depthPercentage: 0 }
+    { depthPercentage: 0, durationDays: 0, recoveryDays: 0 }
   );
   
   const totalDepthPercentage = drawdowns.reduce((sum, dd) => sum + dd.depthPercentage, 0);
